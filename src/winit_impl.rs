@@ -6,16 +6,32 @@ use winit::{
 };
 use winit::dpi::LogicalPosition;
 use winit::event::DeviceEvent;
+use winit::platform::windows::WindowBuilderExtWindows;
+use winit::window::{Fullscreen, Icon, Theme};
 
-fn capture() {
-    let (window_width, window_height) = (800.0, 600.0);
-
+pub fn get_select_area() {
+    // 事件循环实例
     let event_loop = EventLoop::new();
+    // 窗口创建
     let window = WindowBuilder::new()
-        .with_title("Mouse selection")
-        .with_inner_size(LogicalSize::new(window_width, window_height))
+        // 无边框
+        // .with_decorations(false)
+        // 任务栏隐藏
+        .with_skip_taskbar(true)
+        // 置顶
+        .with_always_on_top(true)
+        // 透明
+        .with_transparent(true)
+        // 全屏
+        // .with_fullscreen(Some(Fullscreen::Borderless(None)))
+        // 标题
+        .with_title("截图")
+        // 事件循环绑定
         .build(&event_loop)
         .unwrap();
+
+    let icon = Icon::from_rgba(vec![255, 0, 0, 255], 1, 1).unwrap();
+    window.set_window_icon(Some(icon));
 
     // 记录鼠标位置
     let mut last_mouse_position = LogicalPosition::new(0.0, 0.0);
@@ -24,13 +40,15 @@ fn capture() {
     let mut start_point: Option<LogicalPosition<f64>> = None;
 
     event_loop.run(move |event, _, control_flow| {
-        *control_flow = ControlFlow::Wait;
+        control_flow.set_wait();
 
         match event {
             Event::WindowEvent { event, .. } => {
                 match event {
                     // 关闭
-                    WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+                    WindowEvent::CloseRequested => control_flow.set_exit(),
+                    // 右键退出
+                    WindowEvent::MouseInput { button: MouseButton::Right, .. } => control_flow.set_exit(),
                     // 左键按下
                     WindowEvent::MouseInput { state: ElementState::Pressed, button: MouseButton::Left, .. } => {
                         start_point = Some(last_mouse_position.clone());
@@ -49,24 +67,17 @@ fn capture() {
                         }
                         start_point = None;
                     }
+                    // 实时记录鼠标位置
                     WindowEvent::CursorMoved { position, .. } => {
                         last_mouse_position = position.to_logical(window.scale_factor());
                     }
                     _ => {}
                 }
+            },
+            Event::RedrawRequested(_) => {
+                
             }
             _ => {}
         }
     });
-}
-
-
-#[cfg(test)]
-mod unit_test {
-    use super::*;
-
-    #[test]
-    fn tt() {
-        capture();
-    }
 }

@@ -7,4 +7,9 @@ edition = "2021"
 
 [dependencies]
 winit = "0.27.5"
+wgpu = "0.14.0"
 gfx = "0.18.2"
+
+#piston_window = "0.127.0"
+
+fltk = { version = "1.4.5", features = ["no-pango", "no-images"] }
