@@ -14,8 +14,7 @@ const WIDTH: i32 = 800;
 const HEIGHT: i32 = 600;
 
 fn main() {
-    get_select_area(1);
+    // get_select_area(1);
 
-    // let mut p = BoxSelectionImpl::new();
-    // p.start();
+    FltkImpl::request_select();
 }

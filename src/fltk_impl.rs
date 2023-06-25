@@ -1,5 +1,6 @@
 use fltk::app::{screen_count, screen_num, screen_scale, screen_xywh};
 use crate::declares::ScreenInfoFltk;
+use crate::fltk_impl::box_selection_impl::BoxSelectionImpl;
 
 pub mod box_selection_impl;
 
@@ -15,12 +16,6 @@ impl FltkImpl {
                 scale_factor: screen_scale(screen_num),
                 xywh: screen_xywh(screen_num),
             });
-
-            println!("{:?}", ScreenInfoFltk {
-                screen_num,
-                scale_factor: screen_scale(screen_num),
-                xywh: screen_xywh(screen_num),
-            });
         }
         screens
     }
@@ -32,6 +27,9 @@ impl FltkImpl {
 
     /// 交互式选择某区域
     pub fn request_select() {
-        // TODO
+        let mut task = BoxSelectionImpl::new(FltkImpl::get_screens());
+        task.start();
+
+        println!("after app quit");
     }
 }

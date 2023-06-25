@@ -179,6 +179,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "fltk-evented"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "41e089ad3b33b2423bf5edc508118c02835b67720fd53ebc493ca84cd4d94b48"
+dependencies = [
+ "fltk",
+]
+
+[[package]]
 name = "fltk-sys"
 version = "1.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -282,6 +291,7 @@ name = "screen_capture"
 version = "0.1.0"
 dependencies = [
  "fltk",
+ "fltk-evented",
  "screenshots",
 ]
 

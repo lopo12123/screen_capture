@@ -1,7 +1,7 @@
 /// fltk获取到的屏幕信息
 ///
 /// 完整信息查看 [ScreenInfo]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct ScreenInfoFltk {
     /// 屏幕序号 (从0开始递增, fltk 使用)
     pub screen_num: i32,

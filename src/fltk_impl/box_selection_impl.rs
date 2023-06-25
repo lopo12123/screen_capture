@@ -11,7 +11,7 @@ use fltk::{
 use std::cell::RefCell;
 use std::cmp::min;
 use std::rc::Rc;
-use fltk::app::{App, event_coords, event_key, event_mouse_button, get_mouse, screen_count, screen_num, screen_scale, screen_size, screen_work_area, screen_xywh};
+use fltk::app::{App, event, event_coords, event_key, event_mouse_button, get_mouse, quit, screen_count, screen_num, screen_scale, screen_size, screen_work_area, screen_xywh};
 use fltk::button::Button;
 use fltk::draw::{draw_rect, overlay_clear};
 use fltk::enums::{Align, Key, Mode};
@@ -20,7 +20,7 @@ use fltk::window::{DoubleWindow, OverlayWindow, WindowType};
 use crate::declares::{ScreenInfo, ScreenInfoFltk};
 
 /// 绘图的参数配置
-struct BoxSelectionConfig {
+pub struct BoxSelectionConfig {
     /// 画布背景色
     canvas_background_color: Color,
     /// 矩形线条粗细
@@ -40,64 +40,172 @@ impl BoxSelectionConfig {
 }
 
 pub struct WindowPrefab {
+    screen: ScreenInfoFltk,
     win: Window,
-    // canvas: Frame,
-    // area: (),
+    start: Option<(i32, i32)>,
+    end: Option<(i32, i32)>,
 }
 
 impl WindowPrefab {
     /// 预制窗口
-    pub fn new(w: i32, h: i32) -> Self {
-        let mut win: DoubleWindow = Window::default()
+    pub fn new(screen: ScreenInfoFltk, config: BoxSelectionConfig) -> Self {
+        let (x, y, w, h) = screen.xywh;
+
+        // region 窗口
+        let mut win = Window::default()
+            .with_pos(x, y)
             .with_size(w, h)
             .with_label("截图");
+        // - 设置风格
+        win.set_frame(FrameType::FlatBox);
+        // - 设置所属屏幕
+        win.set_screen_num(screen.screen_num);
         // - 无边框 & 隐藏任务栏
         win.set_border(false);
         // - 置顶
-        win.make_modal(true);
+        // win.make_modal(true);
         // - 全屏
-        win.fullscreen(true);
-        // - 设置所属屏幕
-        win.set_screen_num(1);
+        // win.fullscreen(true);
 
-        // win.handle(|w, ev| {
-        //     match ev {
-        //         Event::KeyDown => match event_key() {
-        //             Key::Enter | Key::KPEnter => {
-        //                 // TODO 关闭窗口并
-        //                 Window::delete(w.to_owned());
-        //                 println!("confirmed: {:?}", event_key().to_char());
-        //                 true
-        //             }
-        //             _ => false
-        //         },
-        //         _ => false,
-        //     }
-        // });
+        // region 画布
+        let mut canvas = Frame::default()
+            .with_pos(0, 0)
+            .with_size(w, h);
+        // - 设置风格
+        canvas.set_frame(FrameType::FlatBox);
+        // - 背景色
+        canvas.set_color(config.canvas_background_color);
+        // endregion
+
+        win.end();
+        // endregion
+
+        // region 离屏渲染
+        let offs = Offscreen::new(w, h).unwrap();
+        #[cfg(not(target_os = "macos"))]
+        {
+            offs.begin();
+            draw_rect_fill(0, 0, w, h, config.canvas_background_color);
+            offs.end();
+        }
+        let offs = Rc::new(RefCell::new(offs));
+
+        // 设置画布的绘制函数
+        canvas.draw({
+            let offs = offs.clone();
+            let canvas_bg = config.canvas_background_color;
+            move |_| {
+                let mut offs = offs.borrow_mut();
+                if offs.is_valid() {
+                    // offs.rescale();
+                    offs.copy(0, 0, w, h, 0, 0);
+                } else {
+                    offs.begin();
+                    draw_rect_fill(0, 0, w, h, canvas_bg);
+                    offs.copy(0, 0, w, h, 0, 0);
+                    offs.end();
+                }
+            }
+        });
+
+        // 监听画布交互
+
+        canvas.handle({
+            let mut coord: (i32, i32) = (0, 0);
+            move |f, ev| {
+                let offs = offs.borrow_mut();
+                match ev {
+                    Event::Push => {
+                        // 记录按下位置
+                        coord = event_coords();
+
+                        println!("Event::Push: {:?}; {:?}", get_mouse(), event_coords());
+                        true
+                    }
+                    Event::Released => {
+                        // 记录松开位置
+                        println!("Event::Released: {:?}; {:?}", get_mouse(), event_coords());
+                        true
+                    }
+                    Event::Drag => {
+                        offs.begin();
+
+                        // 清屏
+                        draw_rect_fill(0, 0, w, h, config.canvas_background_color);
+                        // 设置颜色
+                        set_draw_color(Color::Red);
+                        // 设置粗细
+                        set_line_style(LineStyle::Solid, config.rect_border_width);
+                        // 获取鼠标当前位置
+                        let pointer = event_coords();
+                        // 绘制矩形框
+                        draw_rect_fill(
+                            min(coord.0, pointer.0),
+                            min(coord.1, pointer.1),
+                            (pointer.0 - coord.0).abs(),
+                            (pointer.1 - coord.1).abs(),
+                            config.rect_background_color,
+                        );
+                        offs.end();
+
+                        // 同步到画布
+                        f.redraw();
+                        set_line_style(LineStyle::Solid, 0);
+                        true
+                    }
+                    _ => false,
+                }
+            }
+        });
+        // endregion
+
+        println!("Initialize window on screen {{{}}} with parameter xywh: {:?}", screen.screen_num, screen.xywh);
+
+        win.handle(|_, ev| {
+            match ev {
+                Event::KeyDown => match event_key() {
+                    Key::Escape => {
+                        println!("Quit. (cause Key::Escape is triggered)");
+                        quit();
+                        true
+                    }
+                    Key::Enter | Key::KPEnter => {
+                        println!("Quit. (cause Key::Enter | Key::KPEnter is triggered)");
+                        quit();
+                        true
+                    }
+                    _ => false
+                },
+                _ => false,
+            }
+        });
 
         WindowPrefab {
-            win
+            screen,
+            win,
+            start: None,
+            end: None,
         }
     }
 
     /// 展示窗口
     pub fn show(&mut self) {
-        self.win.show();
-    }
+        println!("Show window on screen {{{}}} with parameter xywh: {:?}", self.screen.screen_num, self.screen.xywh);
 
-    /// 销毁窗口
-    pub fn close(self) {
-        Window::delete(self.win);
+        self.win.show();
+
+        // !以下必须在 `show` 之后调用
+        // - 透明
+        // self.win.set_color(Color::from_rgba_tuple((255, 255, 255, 0)));
+        self.win.set_opacity(0.3);
     }
 }
 
 pub struct BoxSelectionImpl {
-    /// 配置
-    config: BoxSelectionConfig,
     /// app 实例
     app: App,
     /// 窗口实例
-    wins: Vec<WindowPrefab>,
+    prefabs: Vec<WindowPrefab>,
 }
 
 impl BoxSelectionImpl {
@@ -105,26 +213,31 @@ impl BoxSelectionImpl {
     pub fn setup_window() {}
 
     /// 新建一个实例
-    pub fn new() -> Self {
+    pub fn new(screens: Vec<ScreenInfoFltk>) -> Self {
+        let mut win_of_screens = vec![];
+
+        for screen in screens {
+            win_of_screens.push(WindowPrefab::new(screen, BoxSelectionConfig::default()));
+        }
+
         BoxSelectionImpl {
-            config: BoxSelectionConfig::default(),
             app: App::default(),
-            wins: vec![
-                WindowPrefab::new(800, 600)
-            ],
+            prefabs: win_of_screens,
         }
     }
 
     /// 启动窗口进行框选
     pub fn start(&mut self) {
-        for win in &mut self.wins {
-            win.show();
+        for prefab in &mut self.prefabs {
+            prefab.show();
         }
+
         self.app.run().unwrap();
     }
 
+    /// 停止应用
     pub fn stop(&self) {
-        self.app.quit();
+        App::quit(self.app);
     }
 }
 
@@ -189,8 +302,7 @@ pub fn get_select_area(screen_num: i32) {
         draw_rect_fill(0, 0, width, height, canvas_background_color);
         offs.end();
     }
-
-    let offs = Rc::from(RefCell::from(offs));
+    let offs = Rc::new(RefCell::new(offs));
 
     // 设置画布的绘制函数
     canvas.draw({
