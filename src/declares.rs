@@ -4,7 +4,7 @@ pub struct ScreenInfo {
     /// 是否是主要屏幕
     pub is_primary: bool,
 
-    /// 屏幕id (screenshots 使用)
+    /// 屏幕id (screenshots 使用, 1 表示未找到)
     pub screen_id: u32,
 
     /// 屏幕序号 (从0开始递增, fltk 使用)
