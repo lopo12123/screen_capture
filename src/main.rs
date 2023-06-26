@@ -7,6 +7,9 @@ mod declares;
 mod utils;
 
 fn main() {
+    println!("use as test");
+
+
     let area = ScreenCapture::request_select();
     println!("area: {:?}", area);
 }

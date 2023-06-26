@@ -22,7 +22,7 @@ impl ScreenCapture {
 
     /// re-export [ScreenshotsImpl::capture_by_id]
     ///
-    /// 截取指定id的屏幕的指定区域 (x,y为相对于当前屏幕的x,y坐标)
+    /// 截取指定id的屏幕
     pub fn capture_by_id(screen_id: u32) -> Option<CaptureInfo> {
         ScreenshotsImpl::capture_by_id(screen_id)
     }

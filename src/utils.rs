@@ -36,19 +36,3 @@ pub fn physical_to_logic_xywh(physical: (i32, i32, i32, i32), scale_factor: f32)
         (I32(x) * scale_factor, I32(y) * scale_factor, I32(w) * scale_factor, I32(h) * scale_factor)
     }
 }
-
-
-#[cfg(test)]
-mod unit_test {
-    use super::*;
-
-    #[test]
-    fn tt() {
-        let p = (1, 2, 3, 4);
-        let sf = 1.5;
-
-        println!("{:?}", physical_to_logic(p, sf));
-
-        // println!("hello");
-    }
-}

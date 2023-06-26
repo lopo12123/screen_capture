@@ -47,7 +47,7 @@ impl ScreenshotsImpl {
                 screen_id: screen.display_info.id,
                 width: image.width(),
                 height: image.height(),
-                buffer: image.rgba().to_vec(),
+                buffer: image.to_png().unwrap_or(vec![]),
             });
         }
 
@@ -63,7 +63,7 @@ impl ScreenshotsImpl {
                     screen_id: screen.display_info.id,
                     width: image.width(),
                     height: image.height(),
-                    buffer: image.rgba().to_vec(),
+                    buffer: image.to_png().unwrap_or(vec![]),
                 })
             }
             None => None,
@@ -79,7 +79,7 @@ impl ScreenshotsImpl {
                     screen_id: screen.display_info.id,
                     width: image.width(),
                     height: image.height(),
-                    buffer: image.rgba().to_vec(),
+                    buffer: image.to_png().unwrap_or(vec![]),
                 })
             }
             None => None,
