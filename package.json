@@ -1,0 +1,32 @@
+{
+  "name": "screen_capture",
+  "author": "lopo<lopo@zju.edu.cn>",
+  "version": "0.1.0",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "packageManager": "yarn@3.4.1",
+  "scripts": {
+    "build": "napi build --platform --release \"./dist\""
+  },
+  "napi": {
+    "name": "screen_capture",
+    "triples": {
+      "additional": [
+        "aarch64-apple-darwin",
+        "aarch64-linux-android",
+        "aarch64-unknown-linux-gnu",
+        "aarch64-unknown-linux-musl",
+        "aarch64-pc-windows-msvc",
+        "armv7-unknown-linux-gnueabihf",
+        "x86_64-unknown-linux-musl",
+        "x86_64-unknown-freebsd",
+        "i686-pc-windows-msvc",
+        "armv7-linux-androideabi",
+        "universal-apple-darwin"
+      ]
+    }
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^2.16.1"
+  }
+}
