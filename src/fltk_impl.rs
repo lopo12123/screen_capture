@@ -24,7 +24,11 @@ impl FltkImpl {
             let info = ScreenInfo {
                 is_primary: ss_screen.is_primary,
                 screen_id: ss_screen.id,
-                screen_num: screen_num(ss_screen.x, ss_screen.y),
+                // TODO 有异常, 获取屏幕数不准
+                screen_num: screen_num(
+                    (ss_screen.x as f32 * sf) as i32,
+                    (ss_screen.y as f32 * sf) as i32,
+                ),
                 scale_factor: sf,
                 xywh_real: (
                     ss_screen.x,

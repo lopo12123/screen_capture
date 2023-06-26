@@ -14,9 +14,9 @@ fn main() {
     let area = ScreenCapture::request_select();
     println!("area: {:?}", area);
 
-    // let screens = ScreenshotsImpl::get_screens();
-    // println!("screens: {:#?}", screens);
-    //
-    // let screens = ScreenCapture::get_screens();
-    // println!("screens: {:#?}", screens);
+//     let screens = ScreenshotsImpl::get_screens();
+//     println!("screens: {:#?}", screens);
+//
+//     let screens = ScreenCapture::get_screens();
+//     println!("screens: {:#?}", screens);
 }
