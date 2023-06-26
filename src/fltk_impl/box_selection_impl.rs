@@ -11,7 +11,7 @@ use std::rc::Rc;
 use fltk::app::{App, event_coords, event_key, quit};
 use fltk::enums::{Key};
 use crate::declares::{ScreenInfo};
-use crate::utils::{physical_to_logic_xy};
+use crate::utils::{physical_to_logic_xy, physical_to_logic_xywh};
 
 /// 绘图的参数配置
 pub struct BoxSelectionConfig {
@@ -24,8 +24,8 @@ pub struct BoxSelectionConfig {
 impl BoxSelectionConfig {
     pub fn default() -> Self {
         BoxSelectionConfig {
-            canvas_background_color: Color::White,
-            rect_background_color: Color::Black,
+            canvas_background_color: Color::Black,
+            rect_background_color: Color::White,
         }
     }
 }
@@ -43,7 +43,7 @@ impl WindowPrefab {
         let start = Rc::new(RefCell::new(None));
         let end = Rc::new(RefCell::new(None));
 
-        let (x, y, w, h) = screen.xywh_logic;
+        let (x, y, w, h) = physical_to_logic_xywh(screen.xywh_logic, screen.scale_factor);
 
         // region 窗口
         let mut win = Window::default()
@@ -71,7 +71,7 @@ impl WindowPrefab {
         canvas.set_color(config.canvas_background_color);
         // endregion
 
-        println!("Initialize window on screen {{{}}} with xywh_physical: {:?}, scale_factor: {}", screen.screen_num, screen.xywh_physical, screen.scale_factor);
+        println!("Initialize window on screen {{{}}} with xywh_logic: {:?}, scale_factor: {}", screen.screen_num, screen.xywh_logic, screen.scale_factor);
 
         win.end();
         // endregion
