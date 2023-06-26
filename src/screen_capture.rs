@@ -1,11 +1,11 @@
-use crate::declares::ScreenInfo;
+use crate::declares::{CaptureInfo, ScreenInfo};
 use crate::fltk_impl::FltkImpl;
 use crate::screenshots_impl::ScreenshotsImpl;
 
 /// ffi 暴露的方法
-pub struct FfiExport {}
+pub struct ScreenCapture {}
 
-impl FfiExport {
+impl ScreenCapture {
     /// 获取所有屏幕信息
     pub fn get_screens() -> Vec<ScreenInfo> {
         let mut screens: Vec<ScreenInfo> = vec![];
@@ -29,5 +29,26 @@ impl FfiExport {
         }
 
         screens
+    }
+
+    /// re-export [ScreenshotsImpl::capture_all]
+    ///
+    /// 截取所有屏幕
+    pub fn capture_all() -> Vec<CaptureInfo> {
+        ScreenshotsImpl::capture_all()
+    }
+
+    /// re-export [ScreenshotsImpl::capture_by_id]
+    ///
+    /// 截取指定id的屏幕的指定区域 (x,y为相对于当前屏幕的x,y坐标)
+    pub fn capture_by_id(screen_id: u32) -> Option<CaptureInfo> {
+        ScreenshotsImpl::capture_by_id(screen_id)
+    }
+
+    /// re-export
+    ///
+    /// 截取指定id的屏幕的指定区域 (x,y为相对于当前屏幕的x,y坐标)
+    pub fn capture_area_by_id(screen_id: u32, x: i32, y: i32, w: u32, h: u32) -> Option<CaptureInfo> {
+        ScreenshotsImpl::capture_area_by_id(screen_id, x, y, w, h)
     }
 }

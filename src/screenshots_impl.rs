@@ -70,38 +70,6 @@ impl ScreenshotsImpl {
         }
     }
 
-    /// 截取目标点所在屏幕
-    pub fn capture_by_point(x: i32, y: i32) -> Option<CaptureInfo> {
-        match Screen::from_point(x, y) {
-            Ok(screen) => {
-                let image = screen.capture().unwrap();
-                Some(CaptureInfo {
-                    screen_id: screen.display_info.id,
-                    width: image.width(),
-                    height: image.height(),
-                    buffer: image.rgba().to_vec(),
-                })
-            }
-            Err(_) => None,
-        }
-    }
-
-    /// 截取指定区域 (x,y为相对于当前屏幕的x,y坐标)
-    pub fn capture_area(x: i32, y: i32, w: u32, h: u32) -> Option<CaptureInfo> {
-        match Screen::from_point(x, y) {
-            Ok(screen) => {
-                let image = screen.capture_area(x, y, w, h).unwrap();
-                Some(CaptureInfo {
-                    screen_id: screen.display_info.id,
-                    width: image.width(),
-                    height: image.height(),
-                    buffer: image.rgba().to_vec(),
-                })
-            }
-            Err(_) => None,
-        }
-    }
-
     /// 截取指定id的屏幕的指定区域 (x,y为相对于当前屏幕的x,y坐标)
     pub fn capture_area_by_id(screen_id: u32, x: i32, y: i32, w: u32, h: u32) -> Option<CaptureInfo> {
         match ScreenshotsImpl::get_screen(screen_id) {
@@ -115,22 +83,6 @@ impl ScreenshotsImpl {
                 })
             }
             None => None,
-        }
-    }
-
-    /// 截取目标点所在屏幕的指定区域 (x,y为相对于当前屏幕的x,y坐标)
-    pub fn capture_area_by_point(px: i32, py: i32, x: i32, y: i32, w: u32, h: u32) -> Option<CaptureInfo> {
-        match Screen::from_point(px, py) {
-            Ok(screen) => {
-                let image = screen.capture_area(x, y, w, h).unwrap();
-                Some(CaptureInfo {
-                    screen_id: screen.display_info.id,
-                    width: image.width(),
-                    height: image.height(),
-                    buffer: image.rgba().to_vec(),
-                })
-            }
-            Err(_) => None,
         }
     }
 }
