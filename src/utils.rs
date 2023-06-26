@@ -27,7 +27,7 @@ pub fn logic_after_scale(logic: i32, scale_factor: f32) -> i32 {
 
 /// 应用缩放后的坐标
 #[allow(unused)]
-pub fn logic_after_scale_xy(logic: (i32, i32), scale_factor: f32) -> (i32, i32) {
+pub fn get_real_coord_xy(logic: (i32, i32), scale_factor: f32) -> (i32, i32) {
     // logic
     if scale_factor == 1.0 { logic } else { (I32(logic.0) * scale_factor, I32(logic.1) * scale_factor) }
 }

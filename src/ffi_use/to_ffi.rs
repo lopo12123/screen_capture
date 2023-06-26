@@ -23,31 +23,23 @@ pub struct ScreenInfoFfi {
     /// 缩放比例
     pub scale_factor: f64,
 
-    /// 屏幕坐标和宽高
+    /// 屏幕坐标和宽高 (当前真实逻辑坐标系)
     ///
     /// from tuple: `(x: i32, y: i32, w: i32, h: i32)`
     #[napi(ts_type = "[x: number, y: number, w: number, h: number]")]
-    pub xywh_physical: Vec<i32>,
-
-    /// 屏幕坐标和宽高
-    ///
-    /// from tuple: `(x: i32, y: i32, w: i32, h: i32)`
-    #[napi(ts_type = "[x: number, y: number, w: number, h: number]")]
-    pub xywh_logic: Vec<i32>,
+    pub xywh_real: Vec<i32>,
 }
 
 impl FfiConvertible<ScreenInfoFfi> for ScreenInfo {
     fn to_ffi(&self) -> ScreenInfoFfi {
-        let (px, py, pw, ph) = self.xywh_physical;
-        let (lx, ly, lw, lh) = self.xywh_logic;
+        let (lx, ly, lw, lh) = self.xywh_real;
 
         ScreenInfoFfi {
             is_primary: self.is_primary,
             screen_id: self.screen_id,
             screen_num: self.screen_num,
             scale_factor: self.scale_factor as f64,
-            xywh_physical: vec![px, py, pw, ph],
-            xywh_logic: vec![lx, ly, lw, lh],
+            xywh_real: vec![lx, ly, lw, lh],
         }
     }
 }

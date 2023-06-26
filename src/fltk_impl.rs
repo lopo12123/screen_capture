@@ -16,18 +16,22 @@ impl FltkImpl {
 
         for ss_screen in ss_screens {
             let sf = ss_screen.scale_factor;
-            let x_physical = (ss_screen.x as f32 / sf) as i32;
-            let y_physical = (ss_screen.y as f32 / sf) as i32;
-            let w_physical = (ss_screen.width as f32 / sf) as i32;
-            let h_physical = (ss_screen.height as f32 / sf) as i32;
+            // let x_physical = (ss_screen.x as f32) as i32;
+            // let y_physical = (ss_screen.y as f32) as i32;
+            // let w_physical = (ss_screen.width as f32 * sf) as i32;
+            // let h_physical = (ss_screen.height as f32 * sf) as i32;
 
             let info = ScreenInfo {
                 is_primary: ss_screen.is_primary,
                 screen_id: ss_screen.id,
-                screen_num: screen_num(x_physical, y_physical),
+                screen_num: screen_num(ss_screen.x, ss_screen.y),
                 scale_factor: sf,
-                xywh_physical: (x_physical, y_physical, w_physical, h_physical),
-                xywh_logic: (ss_screen.x, ss_screen.y, ss_screen.width as i32, ss_screen.height as i32),
+                xywh_real: (
+                    ss_screen.x,
+                    ss_screen.y,
+                    (ss_screen.width as f32 * sf) as i32,
+                    (ss_screen.height as f32 * sf) as i32,
+                ),
             };
 
             if ss_screen.is_primary {

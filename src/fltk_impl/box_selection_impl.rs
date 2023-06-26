@@ -11,7 +11,7 @@ use std::rc::Rc;
 use fltk::app::{App, event_coords, event_key, get_mouse, quit, screen_xywh};
 use fltk::enums::{Key};
 use crate::declares::{ScreenInfo};
-use crate::utils::{logic_after_scale_xy, logic_after_scale_xywh};
+use crate::utils::{get_real_coord_xy};
 
 /// 绘图的参数配置
 pub struct BoxSelectionConfig {
@@ -41,10 +41,12 @@ pub struct WindowPrefab {
 impl WindowPrefab {
     /// 预制窗口
     pub fn new(screen: ScreenInfo, primary_sf: f32, config: BoxSelectionConfig) -> Self {
+        println!("Window {{{}}} config: {:?}", screen.screen_num, screen);
+
         let start = Rc::new(RefCell::new(None));
         let end = Rc::new(RefCell::new(None));
 
-        let (x, y, w, h) = logic_after_scale_xywh(screen.xywh_logic, screen.scale_factor);
+        let (x, y, w, h) = screen.xywh_real;
 
         // region 窗口
         let mut win = Window::default()
@@ -124,7 +126,7 @@ impl WindowPrefab {
                 match ev {
                     Event::Push => {
                         // 记录按下位置
-                        start_logic = event_coords();
+                        start_logic = get_real_coord_xy(event_coords(), sf);
                         *start.borrow_mut() = Some(start_logic);
                         *end.borrow_mut() = None;
 
@@ -133,10 +135,10 @@ impl WindowPrefab {
                     }
                     Event::Released => {
                         // 记录松开位置
-                        let end_logic = event_coords();
+                        let end_logic = get_real_coord_xy(event_coords(), sf);
                         *end.borrow_mut() = Some(end_logic);
 
-                        println!("Event::Released on screen {{{sn}}} at {start_logic:?} (this: coords {:?}, global: {:?})", event_coords(), get_mouse());
+                        println!("Event::Released on screen {{{sn}}} at {end_logic:?} (this: coords {:?}, global: {:?})", event_coords(), get_mouse());
                         true
                     }
                     Event::Drag => {
@@ -145,19 +147,19 @@ impl WindowPrefab {
                         // 清屏
                         draw_rect_fill(0, 0, w, h, config.canvas_background_color);
                         // 获取鼠标当前位置
-                        let curr_logic = event_coords();
+                        let curr_logic = get_real_coord_xy(event_coords(), sf);
                         // 绘制矩形框
-                        let xywh_logic: (i32, i32, i32, i32) = (
+                        let xywh_real: (i32, i32, i32, i32) = (
                             min(start_logic.0, curr_logic.0),
                             min(start_logic.1, curr_logic.1),
                             (curr_logic.0 - start_logic.0).abs(),
                             (curr_logic.1 - start_logic.1).abs(),
                         );
                         draw_rect_fill(
-                            xywh_logic.0,
-                            xywh_logic.1,
-                            xywh_logic.2,
-                            xywh_logic.3,
+                            xywh_real.0,
+                            xywh_real.1,
+                            xywh_real.2,
+                            xywh_real.3,
                             config.rect_background_color,
                         );
 
@@ -216,7 +218,7 @@ impl WindowPrefab {
 
     /// 展示窗口
     pub fn show(&mut self) {
-        println!("Show window on screen {{{}}} with xywh_logic: {:?}", self.screen.screen_num, self.screen.xywh_logic);
+        println!("Show window on screen {{{}}} with xywh_real: {:?}", self.screen.screen_num, self.screen.xywh_real);
 
         self.win.show();
 

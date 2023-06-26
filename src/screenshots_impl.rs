@@ -1,6 +1,7 @@
 use screenshots::{DisplayInfo, Screen};
 use crate::declares::CaptureInfo;
 
+/// `screenshots` 库拿到的坐标基本为物理坐标
 pub struct ScreenshotsImpl {}
 
 impl ScreenshotsImpl {
@@ -21,7 +22,7 @@ impl ScreenshotsImpl {
         None
     }
 
-    /// 获取所有的屏幕信息
+    /// 获取所有的屏幕信息 (xy为逻辑坐标, wh为物理坐标)
     pub fn get_screens() -> Vec<DisplayInfo> {
         let mut screens = vec![];
 
