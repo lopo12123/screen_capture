@@ -1,8 +1,7 @@
-use fltk::app::{screen_count, screen_num, screen_scale, screen_xywh};
+use fltk::app::{screen_num};
 use crate::declares::{ScreenInfo};
 use crate::fltk_impl::box_selection_impl::BoxSelectionImpl;
 use crate::screenshots_impl::ScreenshotsImpl;
-use crate::utils::{physical_to_logic_xywh};
 
 pub mod box_selection_impl;
 
@@ -15,7 +14,7 @@ impl FltkImpl {
         let mut screens: Vec<ScreenInfo> = vec![];
         let ss_screens = ScreenshotsImpl::get_screens();
 
-        for mut ss_screen in ss_screens {
+        for ss_screen in ss_screens {
             let sf = ss_screen.scale_factor;
             let x_physical = (ss_screen.x as f32 / sf) as i32;
             let y_physical = (ss_screen.y as f32 / sf) as i32;

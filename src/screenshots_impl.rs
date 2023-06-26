@@ -1,6 +1,5 @@
 use screenshots::{DisplayInfo, Screen};
 use crate::declares::CaptureInfo;
-use crate::fltk_impl::FltkImpl;
 
 pub struct ScreenshotsImpl {}
 
