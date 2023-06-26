@@ -8,10 +8,10 @@ use fltk::{
 use std::cell::RefCell;
 use std::cmp::min;
 use std::rc::Rc;
-use fltk::app::{App, event_coords, event_key, quit};
+use fltk::app::{App, event_coords, event_key, get_mouse, quit, screen_xywh};
 use fltk::enums::{Key};
 use crate::declares::{ScreenInfo};
-use crate::utils::{physical_to_logic_xy, physical_to_logic_xywh};
+use crate::utils::{logic_after_scale_xy, logic_after_scale_xywh};
 
 /// 绘图的参数配置
 pub struct BoxSelectionConfig {
@@ -31,6 +31,7 @@ impl BoxSelectionConfig {
 }
 
 pub struct WindowPrefab {
+    primary_sf: f32,
     screen: ScreenInfo,
     win: Window,
     start: Rc<RefCell<Option<(i32, i32)>>>,
@@ -39,20 +40,20 @@ pub struct WindowPrefab {
 
 impl WindowPrefab {
     /// 预制窗口
-    pub fn new(screen: ScreenInfo, config: BoxSelectionConfig) -> Self {
+    pub fn new(screen: ScreenInfo, primary_sf: f32, config: BoxSelectionConfig) -> Self {
         let start = Rc::new(RefCell::new(None));
         let end = Rc::new(RefCell::new(None));
 
-        let (x, y, w, h) = physical_to_logic_xywh(screen.xywh_logic, screen.scale_factor);
+        let (x, y, w, h) = logic_after_scale_xywh(screen.xywh_logic, screen.scale_factor);
 
         // region 窗口
         let mut win = Window::default()
-            .with_pos(x, y)
-            .with_size(w, h)
             .with_label(&format!("截图_{}", screen.screen_num));
         // - 设置风格
         win.set_frame(FrameType::FlatBox);
-        // - 设置所属屏幕
+        // - 设置位置、大小及所属屏幕
+        win.set_pos(x, y);
+        win.set_size(w, h);
         win.set_screen_num(screen.screen_num);
         // - 无边框 & 隐藏任务栏
         win.set_border(false);
@@ -71,7 +72,7 @@ impl WindowPrefab {
         canvas.set_color(config.canvas_background_color);
         // endregion
 
-        println!("Initialize window on screen {{{}}} with xywh_logic: {:?}, scale_factor: {}", screen.screen_num, screen.xywh_logic, screen.scale_factor);
+        println!("Initialize window {{{}}} on screen {{{}}} with xywh: ({x}, {y}, {w}, {h}), scale_factor: {}", screen.screen_num, screen.screen_num, screen.scale_factor);
 
         win.end();
         // endregion
@@ -110,6 +111,7 @@ impl WindowPrefab {
         canvas.handle({
             let sn = screen.screen_num;
             let sf = screen.scale_factor;
+            // let sf = primary_sf;
 
             let offs = offs.clone();
             let start = start.clone();
@@ -122,19 +124,19 @@ impl WindowPrefab {
                 match ev {
                     Event::Push => {
                         // 记录按下位置
-                        start_logic = physical_to_logic_xy(event_coords(), sf);
+                        start_logic = event_coords();
                         *start.borrow_mut() = Some(start_logic);
                         *end.borrow_mut() = None;
 
-                        println!("Event::Push on screen {{{}}} with at coords {:?}", sn, start_logic);
+                        println!("Event::Push on screen {{{sn}}} at {start_logic:?}(this: coords {:?}, global: {:?})", event_coords(), get_mouse());
                         true
                     }
                     Event::Released => {
                         // 记录松开位置
-                        let end_logic = physical_to_logic_xy(event_coords(), sf);
+                        let end_logic = event_coords();
                         *end.borrow_mut() = Some(end_logic);
 
-                        println!("Event::Released on screen {{{}}} at logic coords {:?}", sn, end_logic);
+                        println!("Event::Released on screen {{{sn}}} at {start_logic:?} (this: coords {:?}, global: {:?})", event_coords(), get_mouse());
                         true
                     }
                     Event::Drag => {
@@ -143,7 +145,7 @@ impl WindowPrefab {
                         // 清屏
                         draw_rect_fill(0, 0, w, h, config.canvas_background_color);
                         // 获取鼠标当前位置
-                        let curr_logic = physical_to_logic_xy(event_coords(), sf);
+                        let curr_logic = event_coords();
                         // 绘制矩形框
                         let xywh_logic: (i32, i32, i32, i32) = (
                             min(start_logic.0, curr_logic.0),
@@ -181,6 +183,8 @@ impl WindowPrefab {
                 match ev {
                     // 当窗口失去焦点时清除当前窗口的选框
                     Event::Unfocus => {
+                        println!("Clear. (cause Event::Unfocus is triggered)");
+
                         let mut offs = offs.borrow_mut();
                         offs.begin();
                         draw_rect_fill(0, 0, w, h, config.canvas_background_color);
@@ -207,7 +211,7 @@ impl WindowPrefab {
         });
         // endregion
 
-        WindowPrefab { screen, win, start, end }
+        WindowPrefab { primary_sf, screen, win, start, end }
     }
 
     /// 展示窗口
@@ -250,10 +254,14 @@ pub struct BoxSelectionImpl {
 impl BoxSelectionImpl {
     /// 新建一个实例
     pub fn new(screens: Vec<ScreenInfo>) -> Self {
+        // xy使用主屏幕坐标系, wh使用当前屏幕坐标系
+        let primary_sf = screens.first().unwrap().scale_factor;
+        println!("Setup system with primary_scale_factor: {primary_sf}, screen_count: {}", screens.len());
+
         let mut win_of_screens = vec![];
 
         for screen in screens {
-            win_of_screens.push(WindowPrefab::new(screen, BoxSelectionConfig::default()));
+            win_of_screens.push(WindowPrefab::new(screen, primary_sf, BoxSelectionConfig::default()));
         }
 
         BoxSelectionImpl {

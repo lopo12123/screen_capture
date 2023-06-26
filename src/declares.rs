@@ -1,5 +1,5 @@
 /// 综合屏幕信息
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ScreenInfo {
     /// 是否是主要屏幕
     pub is_primary: bool,
@@ -25,6 +25,7 @@ pub struct ScreenInfo {
 }
 
 /// 屏幕捕获信息
+#[derive(Debug, Clone)]
 pub struct CaptureInfo {
     pub screen_id: u32,
     pub width: u32,
