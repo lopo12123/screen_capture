@@ -4,4 +4,4 @@
 
 ### fltk-rs
 
-`event_coords()` 获取到为应用缩放前的坐标
+`event_coords()` 获取到逻辑坐标系 (可以直接使用)

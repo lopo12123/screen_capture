@@ -11,7 +11,7 @@ use std::rc::Rc;
 use fltk::app::{App, event_coords, event_key, get_mouse, quit, screen_xywh};
 use fltk::enums::{Key};
 use crate::declares::{ScreenInfo};
-use crate::utils::{get_real_coord_xy};
+use crate::utils::get_real_coord_xy;
 
 /// 绘图的参数配置
 pub struct BoxSelectionConfig {
@@ -127,6 +127,7 @@ impl WindowPrefab {
                     Event::Push => {
                         // 记录按下位置
                         start_logic = get_real_coord_xy(event_coords(), sf);
+                        // start_logic = event_coords();
                         *start.borrow_mut() = Some(start_logic);
                         *end.borrow_mut() = None;
 
@@ -136,6 +137,7 @@ impl WindowPrefab {
                     Event::Released => {
                         // 记录松开位置
                         let end_logic = get_real_coord_xy(event_coords(), sf);
+                        // let end_logic = event_coords();
                         *end.borrow_mut() = Some(end_logic);
 
                         println!("Event::Released on screen {{{sn}}} at {end_logic:?} (this: coords {:?}, global: {:?})", event_coords(), get_mouse());
@@ -148,6 +150,7 @@ impl WindowPrefab {
                         draw_rect_fill(0, 0, w, h, config.canvas_background_color);
                         // 获取鼠标当前位置
                         let curr_logic = get_real_coord_xy(event_coords(), sf);
+                        // let curr_logic = event_coords();
                         // 绘制矩形框
                         let xywh_real: (i32, i32, i32, i32) = (
                             min(start_logic.0, curr_logic.0),
