@@ -1,5 +1,4 @@
 use fltk::app;
-use fltk::app::{screen_num};
 use crate::declares::{ScreenInfo};
 use crate::fltk_impl::box_selection_impl::BoxSelectionImpl;
 use crate::screenshots_impl::ScreenshotsImpl;

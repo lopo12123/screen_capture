@@ -22,25 +22,14 @@ impl ScreenshotsImpl {
         None
     }
 
-    /// 获取所有的屏幕信息 (xy为逻辑坐标, wh为物理坐标)
-    pub fn get_all() -> Vec<DisplayInfo> {
-        let mut screens = vec![];
-
-        for screen in Screen::all().unwrap() {
-            screens.push(screen.display_info);
-        };
-
-        screens
-    }
-
-    /// 获取指定id的屏幕
-    pub fn get_by_id(screen_id: u32) -> Option<DisplayInfo> {
-        ScreenshotsImpl::get_screen_by_id(screen_id).map_or(None, |v| Some(v.display_info))
-    }
-
     /// 获取指定点所在的屏幕
-    pub fn get_by_point(x: i32, y: i32) -> Option<DisplayInfo> {
-        Screen::from_point(x, y).map_or(None, |v| Some(v.display_info))
+    fn get_screen_by_point(px: i32, py: i32) -> Option<Screen> {
+        Screen::from_point(px, py).ok()
+    }
+
+    /// 获取指定点所在的屏幕信息
+    pub fn get_by_point(px: i32, py: i32) -> Option<DisplayInfo> {
+        ScreenshotsImpl::get_screen_by_point(px, py).map_or(None, |v| Some(v.display_info))
     }
 
     /// 截取所有屏幕
@@ -83,6 +72,22 @@ impl ScreenshotsImpl {
     /// 截取指定id的屏幕的指定区域 (x,y为相对于当前屏幕的x,y坐标)
     pub fn capture_area_by_id(screen_id: u32, x: i32, y: i32, w: u32, h: u32) -> Option<CaptureInfo> {
         match ScreenshotsImpl::get_screen_by_id(screen_id) {
+            Some(screen) => {
+                let image = screen.capture_area(x, y, w, h).unwrap();
+                Some(CaptureInfo {
+                    screen_id: screen.display_info.id,
+                    width: image.width(),
+                    height: image.height(),
+                    buffer: image.to_png().unwrap_or(vec![]),
+                })
+            }
+            None => None,
+        }
+    }
+
+    /// 截取指定点所在的屏幕的指定区域 (px,py为全局坐标, x,y为相对于当前屏幕的x,y坐标)
+    pub fn capture_area_by_point(px: i32, py: i32, x: i32, y: i32, w: u32, h: u32) -> Option<CaptureInfo> {
+        match ScreenshotsImpl::get_screen_by_point(px, py) {
             Some(screen) => {
                 let image = screen.capture_area(x, y, w, h).unwrap();
                 Some(CaptureInfo {

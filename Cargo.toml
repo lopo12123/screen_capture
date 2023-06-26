@@ -19,4 +19,4 @@ screenshots = { version = "0.6.0" }
 napi-build = "2.0.1"
 
 [profile.release]
-lto = true
+lto = true  #  Link-Time Optimization

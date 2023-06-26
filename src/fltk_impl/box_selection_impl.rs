@@ -8,10 +8,9 @@ use fltk::{
 use std::cell::RefCell;
 use std::cmp::min;
 use std::rc::Rc;
-use fltk::app::{App, event_coords, event_key, get_mouse, quit, screen_xywh};
+use fltk::app::{App, event_coords, event_key, get_mouse, quit};
 use fltk::enums::{Key};
 use crate::declares::{ScreenInfo};
-use crate::utils::get_real_coord_xy;
 
 /// 绘图的参数配置
 pub struct BoxSelectionConfig {
@@ -31,7 +30,6 @@ impl BoxSelectionConfig {
 }
 
 pub struct WindowPrefab {
-    primary_sf: f32,
     screen: ScreenInfo,
     win: Window,
     start: Rc<RefCell<Option<(i32, i32)>>>,
@@ -40,7 +38,7 @@ pub struct WindowPrefab {
 
 impl WindowPrefab {
     /// 预制窗口
-    pub fn new(screen: ScreenInfo, primary_sf: f32, config: BoxSelectionConfig) -> Self {
+    pub fn new(screen: ScreenInfo, config: BoxSelectionConfig) -> Self {
         println!("Window {{{}}} config: {:?}", screen.screen_num, screen);
 
         let start = Rc::new(RefCell::new(None));
@@ -112,8 +110,6 @@ impl WindowPrefab {
         // 监听画布交互
         canvas.handle({
             let sn = screen.screen_num;
-            let sf = screen.scale_factor;
-            // let sf = primary_sf;
 
             let offs = offs.clone();
             let start = start.clone();
@@ -126,8 +122,7 @@ impl WindowPrefab {
                 match ev {
                     Event::Push => {
                         // 记录按下位置
-                        start_logic = get_real_coord_xy(event_coords(), sf);
-                        // start_logic = event_coords();
+                        start_logic = event_coords();
                         *start.borrow_mut() = Some(start_logic);
                         *end.borrow_mut() = None;
 
@@ -136,8 +131,7 @@ impl WindowPrefab {
                     }
                     Event::Released => {
                         // 记录松开位置
-                        let end_logic = get_real_coord_xy(event_coords(), sf);
-                        // let end_logic = event_coords();
+                        let end_logic = event_coords();
                         *end.borrow_mut() = Some(end_logic);
 
                         println!("Event::Released on screen {{{sn}}} at {end_logic:?} (this: coords {:?}, global: {:?})", event_coords(), get_mouse());
@@ -149,8 +143,7 @@ impl WindowPrefab {
                         // 清屏
                         draw_rect_fill(0, 0, w, h, config.canvas_background_color);
                         // 获取鼠标当前位置
-                        let curr_logic = get_real_coord_xy(event_coords(), sf);
-                        // let curr_logic = event_coords();
+                        let curr_logic = event_coords();
                         // 绘制矩形框
                         let xywh_real: (i32, i32, i32, i32) = (
                             min(start_logic.0, curr_logic.0),
@@ -190,7 +183,7 @@ impl WindowPrefab {
                     Event::Unfocus => {
                         println!("Clear. (cause Event::Unfocus is triggered)");
 
-                        let mut offs = offs.borrow_mut();
+                        let offs = offs.borrow_mut();
                         offs.begin();
                         draw_rect_fill(0, 0, w, h, config.canvas_background_color);
                         offs.end();
@@ -216,7 +209,7 @@ impl WindowPrefab {
         });
         // endregion
 
-        WindowPrefab { primary_sf, screen, win, start, end }
+        WindowPrefab { screen, win, start, end }
     }
 
     /// 展示窗口
@@ -259,14 +252,12 @@ pub struct BoxSelectionImpl {
 impl BoxSelectionImpl {
     /// 新建一个实例
     pub fn new(screens: Vec<ScreenInfo>) -> Self {
-        // xy使用主屏幕坐标系, wh使用当前屏幕坐标系
-        let primary_sf = screens.first().unwrap().scale_factor;
-        println!("Setup system with primary_scale_factor: {primary_sf}, screen_count: {}", screens.len());
+        println!("Setup system with screen_count: {}", screens.len());
 
         let mut win_of_screens = vec![];
 
         for screen in screens {
-            win_of_screens.push(WindowPrefab::new(screen, primary_sf, BoxSelectionConfig::default()));
+            win_of_screens.push(WindowPrefab::new(screen, BoxSelectionConfig::default()));
         }
 
         BoxSelectionImpl {

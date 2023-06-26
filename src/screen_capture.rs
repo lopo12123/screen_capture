@@ -5,37 +5,45 @@ use crate::screenshots_impl::ScreenshotsImpl;
 /// ffi 暴露的方法
 pub struct ScreenCapture {}
 
+#[allow(unused)]
 impl ScreenCapture {
-    /// re-export [FltkImpl::get_screens]
+    /// re-export
     ///
     /// 获取所有屏幕信息
     pub fn get_screens() -> Vec<ScreenInfo> {
         FltkImpl::get_screens()
     }
 
-    /// re-export [ScreenshotsImpl::capture_all]
+    /// re-export
     ///
     /// 截取所有屏幕
     pub fn capture_all() -> Vec<CaptureInfo> {
         ScreenshotsImpl::capture_all()
     }
 
-    /// re-export [ScreenshotsImpl::capture_by_id]
+    /// re-export
     ///
     /// 截取指定id的屏幕
     pub fn capture_by_id(screen_id: u32) -> Option<CaptureInfo> {
         ScreenshotsImpl::capture_by_id(screen_id)
     }
 
-    /// re-export [ScreenshotsImpl::capture_area_by_id]
+    /// re-export
     ///
     /// 截取指定id的屏幕的指定区域 (x,y为相对于当前屏幕的x,y坐标)
     pub fn capture_area_by_id(screen_id: u32, x: i32, y: i32, w: u32, h: u32) -> Option<CaptureInfo> {
         ScreenshotsImpl::capture_area_by_id(screen_id, x, y, w, h)
     }
 
+    /// re-export
+    ///
+    /// 截取指定点所在的屏幕的指定区域 (px,py为全局坐标, x,y为相对于当前屏幕的x,y坐标)
+    pub fn capture_area_by_point(px: i32, py: i32, x: i32, y: i32, w: u32, h: u32) -> Option<CaptureInfo> {
+        ScreenshotsImpl::capture_area_by_point(px, py, x, y, w, h)
+    }
 
-    /// re-export [FltkImpl::request_select]
+
+    /// re-export
     ///
     /// 交互式选择某区域
     ///
