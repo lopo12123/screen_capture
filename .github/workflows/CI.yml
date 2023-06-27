@@ -149,11 +149,11 @@ jobs:
         with:
           name: assets-bundle
           path: |
-            ${{ env.APP_NAME }}.*.node
-            index.d.ts
-            index.js
-            __test__.ts
-            examples/
+#            ${{ env.APP_NAME }}.*.node
+#            index.d.ts
+#            index.js
+#            __test__.ts
+            dist/
           if-no-files-found: error
 
 #  build-freebsd:
