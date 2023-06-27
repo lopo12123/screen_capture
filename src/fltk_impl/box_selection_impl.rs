@@ -11,6 +11,7 @@ use std::rc::Rc;
 use fltk::app::{App, event_coords, event_key, get_mouse, quit};
 use fltk::enums::{Key};
 use crate::declares::{ScreenInfo};
+use crate::utils::get_real_coord;
 
 /// 绘图的参数配置
 pub struct BoxSelectionConfig {
@@ -38,7 +39,7 @@ pub struct WindowPrefab {
 
 impl WindowPrefab {
     /// 预制窗口
-    pub fn new(screen: ScreenInfo, config: BoxSelectionConfig) -> Self {
+    pub fn new(sfp: f32, screen: ScreenInfo, config: BoxSelectionConfig) -> Self {
         println!("Window {{{}}} config: {:?}", screen.screen_num, screen);
 
         let start = Rc::new(RefCell::new(None));
@@ -47,13 +48,12 @@ impl WindowPrefab {
         let (x, y, w, h) = screen.xywh_real;
 
         // region 窗口
-        let mut win = Window::default()
-            .with_label(&format!("截图_{}", screen.screen_num));
+        let mut win = Window::new(x, y, w, h, "截图");
         // - 设置风格
         win.set_frame(FrameType::FlatBox);
         // - 设置位置、大小及所属屏幕
-        win.set_pos(x, y);
-        win.set_size(w, h);
+        // win.set_pos(x, y);
+        // win.set_size(w, h);
         win.set_screen_num(screen.screen_num);
         // - 无边框 & 隐藏任务栏
         win.set_border(false);
@@ -119,10 +119,13 @@ impl WindowPrefab {
 
             move |f, ev| {
                 let offs = offs.borrow_mut();
+                let sfp = sfp;
+                let sft = screen.scale_factor;
                 match ev {
                     Event::Push => {
                         // 记录按下位置
-                        start_logic = event_coords();
+                        // start_logic = event_coords();
+                        start_logic = get_real_coord(sfp, sft, event_coords());
                         *start.borrow_mut() = Some(start_logic);
                         *end.borrow_mut() = None;
 
@@ -131,7 +134,8 @@ impl WindowPrefab {
                     }
                     Event::Released => {
                         // 记录松开位置
-                        let end_logic = event_coords();
+                        // let end_logic = event_coords();
+                        let end_logic = get_real_coord(sfp, sft, event_coords());
                         *end.borrow_mut() = Some(end_logic);
 
                         println!("Event::Released on screen {{{sn}}} at {end_logic:?} (this: coords {:?}, global: {:?})", event_coords(), get_mouse());
@@ -143,7 +147,8 @@ impl WindowPrefab {
                         // 清屏
                         draw_rect_fill(0, 0, w, h, config.canvas_background_color);
                         // 获取鼠标当前位置
-                        let curr_logic = event_coords();
+                        // let curr_logic = event_coords();
+                        let curr_logic = get_real_coord(sfp, sft, event_coords());
                         // 绘制矩形框
                         let xywh_real: (i32, i32, i32, i32) = (
                             min(start_logic.0, curr_logic.0),
@@ -243,6 +248,8 @@ impl WindowPrefab {
 }
 
 pub struct BoxSelectionImpl {
+    /// 当前聚焦的屏幕的 scale_factor
+    sfp: f32,
     /// app 实例
     app: App,
     /// 窗口实例
@@ -251,16 +258,17 @@ pub struct BoxSelectionImpl {
 
 impl BoxSelectionImpl {
     /// 新建一个实例
-    pub fn new(screens: Vec<ScreenInfo>) -> Self {
-        println!("Setup system with screen_count: {}", screens.len());
+    pub fn new(sfp: f32, screens: Vec<ScreenInfo>) -> Self {
+        println!("Setup system with sfp: {sfp}, screen_count: {}", screens.len());
 
         let mut win_of_screens = vec![];
 
         for screen in screens {
-            win_of_screens.push(WindowPrefab::new(screen, BoxSelectionConfig::default()));
+            win_of_screens.push(WindowPrefab::new(sfp, screen, BoxSelectionConfig::default()));
         }
 
         BoxSelectionImpl {
+            sfp,
             app: App::default(),
             prefabs: win_of_screens,
         }
