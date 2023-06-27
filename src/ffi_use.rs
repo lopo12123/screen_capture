@@ -8,7 +8,7 @@ pub struct FfiUse {}
 
 #[napi]
 impl FfiUse {
-    /// ffi compatible conversion [ScreenCapture::get_screens]
+    /// ffi compatible conversion
     ///
     /// 获取所有屏幕信息
     #[napi]
@@ -22,7 +22,7 @@ impl FfiUse {
         Ok(screens)
     }
 
-    /// ffi compatible conversion [ScreenCapture::capture_all]
+    /// ffi compatible conversion
     ///
     /// 截取所有屏幕
     #[napi]
@@ -36,7 +36,7 @@ impl FfiUse {
         Ok(screens)
     }
 
-    /// ffi compatible conversion [ScreenCapture::capture_by_id]
+    /// ffi compatible conversion
     ///
     /// 截取指定id的屏幕
     #[napi]
@@ -47,7 +47,7 @@ impl FfiUse {
         })
     }
 
-    /// ffi compatible conversion [ScreenCapture::capture_area_by_id]
+    /// ffi compatible conversion
     ///
     /// 截取指定id的屏幕的指定区域 (x,y为相对于当前屏幕的x,y坐标)
     #[napi]
@@ -59,14 +59,14 @@ impl FfiUse {
     }
 
 
-    /// ffi compatible conversion [ScreenCapture::request_select]
+    /// ffi compatible conversion
     ///
     /// 交互式选择某区域
     ///
     /// `(screen_id: u32, x1: i32, y1: i32, x2: i32, y2: i32)`
     #[napi]
-    pub fn request_select(sfp: Option<f64>) -> napi::Result<Option<BoundingBox>> {
-        Ok(match ScreenCapture::request_select(sfp.map_or(None, |v| Some(v as f32))) {
+    pub fn request_bounding(sfp: Option<f64>) -> napi::Result<Option<BoundingBox>> {
+        Ok(match ScreenCapture::request_bounding(sfp.map_or(None, |v| Some(v as f32))) {
             Some(area) => Some(BoundingBox::from_tuple(area)),
             None => None
         })

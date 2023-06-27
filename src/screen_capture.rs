@@ -49,13 +49,13 @@ impl ScreenCapture {
     /// 交互式选择某区域
     ///
     /// `(screen_id: u32, x1: i32, y1: i32, x2: i32, y2: i32)`
-    pub fn request_select(sfp: Option<f32>) -> Option<(u32, i32, i32, i32, i32)> {
+    pub fn request_bounding(sfp: Option<f32>) -> Option<(u32, i32, i32, i32, i32)> {
         println!("========== ========= ========== ========= ========== =========");
 
         let sfp = match sfp {
             Some(v) => v,
             None => {
-                println!("Call request_select without 'sfp', use automatic fetching");
+                println!("Call request_bounding without 'sfp', use automatic fetching");
                 let p = app::get_mouse();
                 println!("Mouse coordinates detected: {:?}", p);
                 match FltkImpl::get_screen_of_pointer(p) {
@@ -73,6 +73,6 @@ impl ScreenCapture {
 
         println!("========== ========= ========== ========= ========== =========");
 
-        FltkImpl::request_select(sfp)
+        FltkImpl::request_bounding(sfp)
     }
 }
