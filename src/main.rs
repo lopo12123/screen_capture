@@ -10,9 +10,11 @@ fn main() {
     println!("use as test");
 
     // 交互式框选
-    // let area = ScreenCapture::request_bounding(None);
-    let area = ScreenCapture::request_capture(None);
-    println!("area: {:?}", area.is_some());
+    let area = ScreenCapture::request_bounding(None);
+    println!("area: {:?}", area);
+
+    // let area = ScreenCapture::request_capture(None);
+    // println!("area: {:?}", area.is_some());
 }
 
 #[cfg(test)]
@@ -29,42 +31,9 @@ mod unit_test {
     fn sf() {
         let app = app::App::default();
         let mut wind = Window::new(640, 360, 1280, 720, "Hello from rust");
+        // wind.set_border(false);
         wind.end();
         wind.show();
         app.run().unwrap();
-    }
-
-    #[test]
-    fn sf_real() {
-        sleep(Duration::from_secs(2));
-
-        let sc = app::get_mouse();
-        println!("sc: {sc:?}");
-
-        // let num = app::Screen::num_at(sc);
-        // println!("num: {}", num.map_or("none".to_string(), |v| v.to_string()));
-
-        // match app::focus() {
-        //     Some(win) => {
-        //         println!("{}, {}", win.x(), win.y());
-        //     },
-        //     None => {
-        //         println!("none");
-        //     }
-        // }
-    }
-
-    #[test]
-    fn ss() {
-        let (a, b) = (2, 1);
-
-
-        println!("{}", i32::abs(2 - 1));
-        println!("{}", i32::abs(1 - 2));
-
-        // let xy = get_real_wh_before_scale(1.5, (424, 960));
-        // println!("xy: {xy:?}");
-        // let screen1 = ScreenshotsImpl::get_by_point(xy.0 + 2, xy.1 + 2).map_or(1, |v| v.id);
-        // println!("{screen1}");
     }
 }

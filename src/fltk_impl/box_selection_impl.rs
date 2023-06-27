@@ -13,6 +13,13 @@ use fltk::enums::{Key};
 use crate::declares::{ScreenInfo};
 use crate::utils::{get_real_coord_of_event, get_real_wh_before_scale};
 
+/// 当前活跃的窗口序号
+///
+/// - -2: 初始状态
+/// - -1: 无活跃窗口
+/// - >= 0: 活跃窗口编号
+static mut ACTIVE_SCREEN_NUM: i32 = -2;
+
 /// 绘图的参数配置
 pub struct BoxSelectionConfig {
     /// 画布背景色
@@ -181,12 +188,18 @@ impl WindowPrefab {
 
         // 监听窗口交互
         win.handle({
+            let sn = screen.screen_num;
             let offs = offs.clone();
             let canvas = canvas.clone();
             let start = start.clone();
             let end = end.clone();
             move |_, ev| {
                 match ev {
+                    Event::Focus => {
+                        unsafe { ACTIVE_SCREEN_NUM = sn; }
+
+                        true
+                    }
                     // 当窗口失去焦点时清除当前窗口的选框
                     Event::Unfocus => {
                         println!("Clear. (cause Event::Unfocus is triggered)");
@@ -201,6 +214,9 @@ impl WindowPrefab {
                         // 清空缓存的 bounding box 信息
                         *start.borrow_mut() = None;
                         *end.borrow_mut() = None;
+
+                        unsafe { ACTIVE_SCREEN_NUM = -1; }
+
                         true
                     }
                     Event::KeyDown => match event_key() {
@@ -235,11 +251,17 @@ impl WindowPrefab {
         println!("Show window on screen {{{}}} with xywh_real: {:?}", self.screen.screen_num, self.screen.xywh_real);
 
         self.win.show();
-
         // !以下必须在 `show` 之后调用
         // - 透明
-        // self.win.set_color(Color::from_rgba_tuple((255, 255, 255, 0)));
+        self.win.set_color(Color::from_rgba_tuple((255, 255, 255, 0)));
         self.win.set_opacity(0.3);
+    }
+
+    /// 聚焦
+    #[deprecated]
+    pub fn focus(&mut self) {
+        println!("Focus on window {}", self.screen.screen_num);
+        self.win.make_current();
     }
 
     /// 获取选框
@@ -289,15 +311,31 @@ impl BoxSelectionImpl {
     ///
     /// `(screen_id: u32, x1: i32, y1: i32, x2: i32, y2: i32)`
     pub fn run(&mut self) -> Option<(u32, i32, i32, i32, i32)> {
+        // 展示全部窗口
         for prefab in &mut self.prefabs {
             prefab.show();
         }
         println!("========== ========= ========== ========= ========== =========");
 
-        self.app.run().unwrap();
+        // 聚焦到最后一个窗口
+        // match self.prefabs.last_mut() {
+        //     Some(v) => v.focus(),
+        //     None => {}
+        // }
+        // println!("========== ========= ========== ========= ========== =========");
 
+        // 监听全部子窗口, 全部窗口都失去焦点则直接退出
+        while self.app.wait() {
+            unsafe {
+                if ACTIVE_SCREEN_NUM == -1 {
+                    println!("Quit. (cause all windows lost focus, i.e. ACTIVE_SCREEN_NUM = -1)");
+                    quit();
+                }
+            }
+        }
+
+        // 获取
         let mut bounding_box: Option<(u32, i32, i32, i32, i32)> = None;
-
         for prefab in &mut self.prefabs {
             if let Some(v) = prefab.get_bounding_box() {
                 bounding_box = Some((prefab.screen.screen_id, v.0, v.1, v.2, v.3))
