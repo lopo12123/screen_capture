@@ -19,6 +19,8 @@ fn main() {
 
 #[cfg(test)]
 mod unit_test {
+    use std::cell::RefCell;
+    use std::rc::Rc;
     use std::thread::sleep;
     use std::time::Duration;
     use fltk::app;
@@ -87,5 +89,22 @@ mod unit_test {
         let btn_confirm = SvgImage::from_data(SVG_CONFIRM);
 
         println!("{} | {}", btn_cancel.is_ok(), btn_cancel.is_ok());
+    }
+
+    fn closure() {
+        fn create_pair<F>(on_cancel: F) where F: FnMut(&mut Button) + 'static {
+            on_cancel();
+        }
+
+        let count = Rc::new(RefCell::new(0));
+
+        create_pair({
+            let count = count.clone();
+            move || {
+                *count.borrow_mut() += 1;
+                let c = *count.borrow_mut();
+                println!("current: {c}");
+            }
+        });
     }
 }

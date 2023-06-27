@@ -22,7 +22,7 @@ const SVG_CONFIRM: &str = r##"<svg viewBox="0 0 1024 1024" version="1.1" xmlns="
 // 取消、确认 按钮
 fn create_button_pair<F1, F2>(on_cancel: F1, on_confirm: F2) -> Pack
     where F1: FnMut(&mut Button) + 'static,
-          F2: FnMut(&mut Button) + 'static
+          F2: FnMut(&mut Button) + 'static,
 {
     let mut cancel = SvgImage::from_data(SVG_CANCEL).unwrap();
     let mut confirm = SvgImage::from_data(SVG_CONFIRM).unwrap();
@@ -125,22 +125,28 @@ impl WindowPrefab {
         // endregion
 
         // region 按钮组
-        let start_inner = start.clone();
-        let end_inner = end.clone();
-        let on_cancel = |_| {
-            println!("Quit. (cause 'cancel_button' is clicked)");
+        let on_cancel = Box::new({
+            let _start = start.clone();
+            let _end = end.clone();
+            move |_: &mut Button| {
+                println!("Quit. (cause 'cancel_button' is clicked)");
 
-            // 清空缓存的 bounding box 信息
-            // *start_inner.borrow_mut() = None;
-            // *end_inner.borrow_mut() = None;
-            quit();
-        };
-        let on_confirm = |_| {
+                // 清空缓存的 bounding box 信息
+                *_start.borrow_mut() = None;
+                *_end.borrow_mut() = None;
+                quit();
+            }
+        });
+        let on_confirm = Box::new(|_: &mut Button| {
             println!("Quit. (cause 'confirm_button' is clicked)");
 
             quit();
-        };
-        let mut pack = create_button_pair(on_cancel, on_confirm);
+        });
+        // 使用 Box 包裹以使闭包拥有 'static 生命周期
+        let mut pack = create_button_pair(
+            on_cancel,
+            on_confirm,
+        );
         win.add(&pack);
         // endregion
 
