@@ -67,7 +67,20 @@ impl FfiUse {
     #[napi]
     pub fn request_bounding(sfp: Option<f64>) -> napi::Result<Option<BoundingBox>> {
         Ok(match ScreenCapture::request_bounding(sfp.map_or(None, |v| Some(v as f32))) {
-            Some(area) => Some(BoundingBox::from_tuple(area)),
+            Some(v) => Some(BoundingBox::from_tuple(v)),
+            None => None
+        })
+    }
+
+    /// ffi compatible conversion
+    ///
+    /// 交互式选择某区域并截取
+    #[napi]
+    pub fn request_capture(sfp: Option<f64>) -> napi::Result<Option<CaptureInfoFfi>> {
+        Ok(match ScreenCapture::request_capture(sfp.map_or(None, |v| Some(v as f32))) {
+            Some(v) => {
+                Some(v.to_ffi())
+            }
             None => None
         })
     }
