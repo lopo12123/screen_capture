@@ -9,9 +9,43 @@ use std::cell::RefCell;
 use std::cmp::min;
 use std::rc::Rc;
 use fltk::app::{App, event_coords, event_key, get_mouse, quit};
+use fltk::button::Button;
 use fltk::enums::{Key};
+use fltk::group::{Pack, PackType};
+use fltk::image::SvgImage;
 use crate::declares::{ScreenInfo};
-use crate::utils::{get_real_coord_of_event, get_real_wh_before_scale};
+use crate::utils::{get_position_of_buttons, get_real_coord_of_event, get_real_wh_before_scale};
+
+const SVG_CANCEL: &str = r##"<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke="red" stroke-width="1.5" stroke-linecap="round"><path d="M5.26904 5.39746L18.4684 18.5968"/><path d="M18.7307 5.39746L5.39738 18.7308"/></svg>"##;
+const SVG_CONFIRM: &str = r##"<svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" fill="green" width="200" height="200"><path d="M892.064 261.888a31.936 31.936 0 0 0-45.216 1.472L421.664 717.248l-220.448-185.216a32 32 0 1 0-41.152 48.992l243.648 204.704a31.872 31.872 0 0 0 20.576 7.488 31.808 31.808 0 0 0 23.36-10.112L893.536 307.136a32 32 0 0 0-1.472-45.248z"/></svg>"##;
+
+// 取消、确认 按钮
+fn create_button_pair() -> Pack {
+    let mut cancel = SvgImage::from_data(SVG_CANCEL).unwrap();
+    let mut confirm = SvgImage::from_data(SVG_CONFIRM).unwrap();
+    cancel.scale(30, 30, true, true);
+    confirm.scale(30, 30, true, true);
+
+    let mut btn_cancel = Button::new(0, 0, 30, 30, None);
+    let mut btn_confirm = Button::new(30, 0, 30, 30, None);
+    btn_cancel.set_frame(FrameType::FlatBox);
+    btn_confirm.set_frame(FrameType::FlatBox);
+    btn_cancel.visible_focus(false);
+    btn_confirm.visible_focus(false);
+
+    btn_cancel.set_color(Color::White);
+    btn_confirm.set_color(Color::White);
+    btn_cancel.set_image(cancel.into());
+    btn_confirm.set_image(confirm.into());
+
+    let mut pack = Pack::new(-100, -100, 70, 30, None)
+        .with_type(PackType::Horizontal);
+    pack.visible_focus(false);
+    pack.add(&btn_cancel);
+    pack.add(&btn_confirm);
+
+    pack
+}
 
 /// 当前活跃的窗口序号
 ///
@@ -33,10 +67,13 @@ impl BoxSelectionConfig {
         BoxSelectionConfig {
             canvas_background_color: Color::Black,
             rect_background_color: Color::White,
+            // canvas_background_color: Color::White,
+            // rect_background_color: Color::Black,
         }
     }
 }
 
+/// 窗口预制件
 pub struct WindowPrefab {
     screen: ScreenInfo,
     win: Window,
@@ -55,6 +92,7 @@ impl WindowPrefab {
         let (x, y, w, h) = screen.xywh_real;
         let (w, h) = get_real_wh_before_scale(screen.scale_factor, (w, h));
 
+        // region 窗口设置
         // region 窗口
         // - 设置位置、大小、标题
         let mut win = Window::new(x, y, w, h, "截图");
@@ -68,6 +106,7 @@ impl WindowPrefab {
         // win.make_modal(true);
         // - 全屏
         // win.fullscreen(true);
+        // endregion
 
         // region 画布
         let mut canvas = Frame::default()
@@ -77,6 +116,11 @@ impl WindowPrefab {
         canvas.set_frame(FrameType::FlatBox);
         // - 背景色
         canvas.set_color(config.canvas_background_color);
+        // endregion
+
+        // region 按钮组
+        let mut pack = create_button_pair();
+        win.add(&pack);
         // endregion
 
         println!("Initialize window {{{}}} on screen {{{}}} (id: {}) with xywh: ({x}, {y}, {w}, {h}), scale_factor: {}", screen.screen_num, screen.screen_num, screen.screen_id, screen.scale_factor);
@@ -123,7 +167,8 @@ impl WindowPrefab {
             let start = start.clone();
             let end = end.clone();
 
-            let mut start_logic: (i32, i32) = (0, 0);
+            let mut start_ev = (0, 0);
+            let mut start_logic = (0, 0);
 
             move |f, ev| {
                 let offs = offs.borrow_mut();
@@ -132,8 +177,8 @@ impl WindowPrefab {
                 match ev {
                     Event::Push => {
                         // 记录按下位置
-                        // start_logic = event_coords();
-                        start_logic = get_real_coord_of_event(sfp, sft, event_coords());
+                        start_ev = event_coords();
+                        start_logic = get_real_coord_of_event(sfp, sft, start_ev);
                         *start.borrow_mut() = Some(start_logic);
                         *end.borrow_mut() = None;
 
@@ -142,9 +187,12 @@ impl WindowPrefab {
                     }
                     Event::Released => {
                         // 记录松开位置
-                        // let end_logic = event_coords();
-                        let end_logic = get_real_coord_of_event(sfp, sft, event_coords());
+                        let end_ev = event_coords();
+                        let end_logic = get_real_coord_of_event(sfp, sft, end_ev);
                         *end.borrow_mut() = Some(end_logic);
+
+                        let (pack_x, pack_y) = get_position_of_buttons(start_ev, end_ev);
+                        pack.set_pos(pack_x, pack_y);
 
                         println!("Event::Released on screen {{{sn}}} at {end_logic:?} (this: coords {:?}, global: {:?})", event_coords(), get_mouse());
                         true
@@ -253,7 +301,7 @@ impl WindowPrefab {
         self.win.show();
         // !以下必须在 `show` 之后调用
         // - 透明
-        self.win.set_color(Color::from_rgba_tuple((255, 255, 255, 0)));
+        // self.win.set_color(Color::from_rgba_tuple((255, 255, 255, 0)));
         self.win.set_opacity(0.3);
     }
 
@@ -282,6 +330,7 @@ impl WindowPrefab {
     }
 }
 
+/// 交互式区域框选
 pub struct BoxSelectionImpl {
     /// app 实例
     app: App,
