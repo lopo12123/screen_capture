@@ -46,7 +46,7 @@ impl WindowPrefab {
         let end = Rc::new(RefCell::new(None));
 
         let (x, y, w, h) = screen.xywh_real;
-        let (w, h) = get_real_wh_before_scale(screen.scale_factor, w, h);
+        let (w, h) = get_real_wh_before_scale(screen.scale_factor, (w, h));
 
         // region 窗口
         // - 设置位置、大小、标题

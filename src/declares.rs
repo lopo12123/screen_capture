@@ -17,6 +17,11 @@ pub struct ScreenInfo {
     ///
     /// `(x: i32, y: i32, w: i32, h: i32)`
     pub xywh_real: (i32, i32, i32, i32),
+
+    /// 屏幕坐标和宽高 (scale_factor 为 1 时的数值)
+    ///
+    /// `(x: i32, y: i32, w: i32, h: i32)`
+    pub xywh_origin: (i32, i32, i32, i32),
 }
 
 /// 屏幕捕获信息

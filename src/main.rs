@@ -21,6 +21,8 @@ mod unit_test {
     use fltk::app;
     use fltk::prelude::*;
     use fltk::window::Window;
+    use crate::screenshots_impl::ScreenshotsImpl;
+    use crate::utils::get_real_wh_before_scale;
 
     #[test]
     fn sf() {
@@ -49,5 +51,13 @@ mod unit_test {
         //         println!("none");
         //     }
         // }
+    }
+
+    #[test]
+    fn ss() {
+        let xy = get_real_wh_before_scale(1.5, (424, 960));
+        println!("xy: {xy:?}");
+        let screen1 = ScreenshotsImpl::get_by_point(xy.0 + 2, xy.1 + 2).map_or(1, |v| v.id);
+        println!("{screen1}");
     }
 }
