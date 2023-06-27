@@ -1,3 +1,4 @@
+use fltk::app;
 use crate::declares::{CaptureInfo, ScreenInfo};
 use crate::fltk_impl::FltkImpl;
 use crate::screenshots_impl::ScreenshotsImpl;
@@ -48,7 +49,30 @@ impl ScreenCapture {
     /// 交互式选择某区域
     ///
     /// `(screen_id: u32, x1: i32, y1: i32, x2: i32, y2: i32)`
-    pub fn request_select() -> Option<(u32, i32, i32, i32, i32)> {
-        FltkImpl::request_select()
+    pub fn request_select(sfp: Option<f32>) -> Option<(u32, i32, i32, i32, i32)> {
+        println!("========== ========= ========== ========= ========== =========");
+
+        let sfp = match sfp {
+            Some(v) => v,
+            None => {
+                println!("Call request_select without 'sfp', use automatic fetching");
+                let p = app::get_mouse();
+                println!("Mouse coordinates detected: {:?}", p);
+                match FltkImpl::get_screen_of_pointer(p) {
+                    Some(v) => {
+                        println!("Automatically get an 'sfp' of {}", v.scale_factor);
+                        v.scale_factor
+                    }
+                    None => {
+                        println!("Failed to get 'sfp', use the default value of 1.0.");
+                        1.0
+                    }
+                }
+            }
+        };
+
+        println!("========== ========= ========== ========= ========== =========");
+
+        FltkImpl::request_select(sfp)
     }
 }

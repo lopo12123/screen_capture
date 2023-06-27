@@ -1,7 +1,7 @@
 use crate::ffi_use::to_ffi::{FfiConvertible, ScreenInfoFfi, CaptureInfoFfi, BoundingBox};
 use crate::screen_capture::ScreenCapture;
 
-mod to_ffi;
+pub mod to_ffi;
 
 #[napi]
 pub struct FfiUse {}
@@ -66,7 +66,8 @@ impl FfiUse {
     /// `(screen_id: u32, x1: i32, y1: i32, x2: i32, y2: i32)`
     #[napi]
     pub fn request_select() -> napi::Result<Option<BoundingBox>> {
-        Ok(match ScreenCapture::request_select() {
+        // TODO
+        Ok(match ScreenCapture::request_select(1.0) {
             Some(area) => Some(BoundingBox::from_tuple(area)),
             None => None
         })

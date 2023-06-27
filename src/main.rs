@@ -1,33 +1,25 @@
+use crate::fltk_impl::FltkImpl;
 use crate::screen_capture::ScreenCapture;
+use crate::screenshots_impl::ScreenshotsImpl;
 
 mod fltk_impl;
 mod screenshots_impl;
 mod screen_capture;
 mod declares;
+mod utils;
 
 fn main() {
     println!("use as test");
 
-    // 测试
-    let area = ScreenCapture::request_select();
+    // 交互式框选
+    let area = ScreenCapture::request_select(None);
     println!("area: {:?}", area);
-
-    // 获取屏幕
-    // let screens = ScreenshotsImpl::get_screens();
-    // println!("screens: {:#?}", screens);
-
-    // 获取屏幕
-    // let xywh = app::screen_xywh(0);
-    // let scale = app::screen_scale(0);
-    // println!("xywh: {xywh:?}; scale: {scale}");
-
-    // 获取屏幕
-    // let screens = FltkImpl::get_screens();
-    // println!("screens: {:#?}", screens);
 }
 
 #[cfg(test)]
 mod unit_test {
+    use std::thread::sleep;
+    use std::time::Duration;
     use fltk::app;
     use fltk::prelude::*;
     use fltk::window::Window;
@@ -35,9 +27,29 @@ mod unit_test {
     #[test]
     fn sf() {
         let app = app::App::default();
-        let mut wind = Window::new(0, 0, 1400, 800, "Hello from rust");
+        let mut wind = Window::new(640, 360, 1280, 720, "Hello from rust");
         wind.end();
         wind.show();
         app.run().unwrap();
+    }
+
+    #[test]
+    fn sf_real() {
+        sleep(Duration::from_secs(2));
+
+        let sc = app::get_mouse();
+        println!("sc: {sc:?}");
+
+        // let num = app::Screen::num_at(sc);
+        // println!("num: {}", num.map_or("none".to_string(), |v| v.to_string()));
+
+        // match app::focus() {
+        //     Some(win) => {
+        //         println!("{}, {}", win.x(), win.y());
+        //     },
+        //     None => {
+        //         println!("none");
+        //     }
+        // }
     }
 }
