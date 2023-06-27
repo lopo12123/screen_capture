@@ -65,9 +65,8 @@ impl FfiUse {
     ///
     /// `(screen_id: u32, x1: i32, y1: i32, x2: i32, y2: i32)`
     #[napi]
-    pub fn request_select() -> napi::Result<Option<BoundingBox>> {
-        // TODO
-        Ok(match ScreenCapture::request_select(1.0) {
+    pub fn request_select(sfp: Option<f64>) -> napi::Result<Option<BoundingBox>> {
+        Ok(match ScreenCapture::request_select(sfp.map_or(None, |v| Some(v as f32))) {
             Some(area) => Some(BoundingBox::from_tuple(area)),
             None => None
         })
