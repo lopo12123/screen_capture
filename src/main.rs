@@ -1,6 +1,4 @@
-use crate::fltk_impl::FltkImpl;
 use crate::screen_capture::ScreenCapture;
-use crate::screenshots_impl::ScreenshotsImpl;
 
 mod fltk_impl;
 mod screenshots_impl;

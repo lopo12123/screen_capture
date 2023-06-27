@@ -49,8 +49,7 @@ impl FltkImpl {
     ///
     /// `(screen_id: u32, x1: i32, y1: i32, x2: i32, y2: i32)`
     pub fn request_select(sfp: f32) -> Option<(u32, i32, i32, i32, i32)> {
-        let mut screens = FltkImpl::get_screens();
-        // let mut task = BoxSelectionImpl::new(sfp, vec![screens[2].clone()]);
+        let screens = FltkImpl::get_screens();
         let mut task = BoxSelectionImpl::new(sfp, screens);
         task.run()
     }
