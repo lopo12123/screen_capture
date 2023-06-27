@@ -72,7 +72,7 @@ impl WindowPrefab {
         canvas.set_color(config.canvas_background_color);
         // endregion
 
-        println!("Initialize window {{{}}} on screen {{{}}} with xywh: ({x}, {y}, {w}, {h}), scale_factor: {}", screen.screen_num, screen.screen_num, screen.scale_factor);
+        println!("Initialize window {{{}}} on screen {{{}}} (id: {}) with xywh: ({x}, {y}, {w}, {h}), scale_factor: {}", screen.screen_num, screen.screen_num, screen.screen_id, screen.scale_factor);
         println!("========== ========= ========== ========= ========== =========");
 
         win.end();
