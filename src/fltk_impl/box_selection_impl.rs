@@ -49,12 +49,11 @@ impl WindowPrefab {
         let (w, h) = get_real_wh_before_scale(screen.scale_factor, w, h);
 
         // region 窗口
+        // - 设置位置、大小、标题
         let mut win = Window::new(x, y, w, h, "截图");
         // - 设置风格
         win.set_frame(FrameType::FlatBox);
-        // - 设置位置、大小及所属屏幕
-        // win.set_pos(x, y);
-        // win.set_size(w, h);
+        // - 设置所属屏幕
         win.set_screen_num(screen.screen_num);
         // - 无边框 & 隐藏任务栏
         win.set_border(false);
@@ -250,8 +249,6 @@ impl WindowPrefab {
 }
 
 pub struct BoxSelectionImpl {
-    /// 当前聚焦的屏幕的 scale_factor
-    sfp: f32,
     /// app 实例
     app: App,
     /// 窗口实例
@@ -271,7 +268,6 @@ impl BoxSelectionImpl {
         }
 
         BoxSelectionImpl {
-            sfp,
             app: App::default(),
             prefabs: win_of_screens,
         }
