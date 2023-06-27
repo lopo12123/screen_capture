@@ -6,7 +6,8 @@
   "types": "index.d.ts",
   "packageManager": "yarn@3.4.1",
   "scripts": {
-    "build": "napi build --platform --release \"./dist\""
+    "build": "napi build --platform --release",
+    "build:dist": "napi build --platform --release \"./dist\""
   },
   "napi": {
     "name": "screen_capture",
