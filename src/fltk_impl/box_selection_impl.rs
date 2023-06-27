@@ -20,7 +20,10 @@ const SVG_CANCEL: &str = r##"<svg width="24" height="24" viewBox="0 0 24 24" xml
 const SVG_CONFIRM: &str = r##"<svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" fill="green" width="200" height="200"><path d="M892.064 261.888a31.936 31.936 0 0 0-45.216 1.472L421.664 717.248l-220.448-185.216a32 32 0 1 0-41.152 48.992l243.648 204.704a31.872 31.872 0 0 0 20.576 7.488 31.808 31.808 0 0 0 23.36-10.112L893.536 307.136a32 32 0 0 0-1.472-45.248z"/></svg>"##;
 
 // 取消、确认 按钮
-fn create_button_pair() -> Pack {
+fn create_button_pair<F1, F2>(on_cancel: F1, on_confirm: F2) -> Pack
+    where F1: FnMut(&mut Button) + 'static,
+          F2: FnMut(&mut Button) + 'static
+{
     let mut cancel = SvgImage::from_data(SVG_CANCEL).unwrap();
     let mut confirm = SvgImage::from_data(SVG_CONFIRM).unwrap();
     cancel.scale(30, 30, true, true);
@@ -37,6 +40,9 @@ fn create_button_pair() -> Pack {
     btn_confirm.set_color(Color::White);
     btn_cancel.set_image(cancel.into());
     btn_confirm.set_image(confirm.into());
+
+    btn_cancel.set_callback(on_cancel);
+    btn_confirm.set_callback(on_confirm);
 
     let mut pack = Pack::new(-100, -100, 70, 30, None)
         .with_type(PackType::Horizontal);
@@ -119,7 +125,22 @@ impl WindowPrefab {
         // endregion
 
         // region 按钮组
-        let mut pack = create_button_pair();
+        let start_inner = start.clone();
+        let end_inner = end.clone();
+        let on_cancel = |_| {
+            println!("Quit. (cause 'cancel_button' is clicked)");
+
+            // 清空缓存的 bounding box 信息
+            // *start_inner.borrow_mut() = None;
+            // *end_inner.borrow_mut() = None;
+            quit();
+        };
+        let on_confirm = |_| {
+            println!("Quit. (cause 'confirm_button' is clicked)");
+
+            quit();
+        };
+        let mut pack = create_button_pair(on_cancel, on_confirm);
         win.add(&pack);
         // endregion
 
