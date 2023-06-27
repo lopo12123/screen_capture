@@ -78,15 +78,15 @@ impl FfiConvertible<CaptureInfoFfi> for CaptureInfo {
 #[napi(object)]
 pub struct BoundingBox {
     pub screen_id: u32,
-    #[napi(ts_type = "[x: number, y: number, w: number, h: number]")]
-    pub xywh: Vec<i32>,
+    #[napi(ts_type = "[x1: number, y1: number, x2: number, y2: number]")]
+    pub bounding_box: Vec<i32>,
 }
 
 impl BoundingBox {
     pub fn from_tuple(tuple: (u32, i32, i32, i32, i32)) -> BoundingBox {
         BoundingBox {
             screen_id: tuple.0,
-            xywh: vec![tuple.1, tuple.2, tuple.3, tuple.4],
+            bounding_box: vec![tuple.1, tuple.2, tuple.3, tuple.4],
         }
     }
 }
