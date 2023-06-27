@@ -60,7 +60,7 @@ impl ScreenCapture {
                 println!("Mouse coordinates detected: {:?}", p);
                 match FltkImpl::get_screen_of_pointer(p) {
                     Some(v) => {
-                        println!("Automatically get an 'sfp' of {}", v.scale_factor);
+                        println!("Automatically get an 'sfp' of {} (screen {{{}}})", v.scale_factor, v.screen_num);
                         v.scale_factor
                     }
                     None => {
