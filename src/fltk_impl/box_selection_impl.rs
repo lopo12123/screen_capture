@@ -183,27 +183,39 @@ impl WindowPrefab {
         win.handle({
             let offs = offs.clone();
             let canvas = canvas.clone();
+            let start = start.clone();
+            let end = end.clone();
             move |_, ev| {
                 match ev {
                     // 当窗口失去焦点时清除当前窗口的选框
                     Event::Unfocus => {
                         println!("Clear. (cause Event::Unfocus is triggered)");
 
+                        // 清空画布
                         let offs = offs.borrow_mut();
                         offs.begin();
                         draw_rect_fill(0, 0, w, h, config.canvas_background_color);
                         offs.end();
                         canvas.borrow_mut().redraw();
+
+                        // 清空缓存的 bounding box 信息
+                        *start.borrow_mut() = None;
+                        *end.borrow_mut() = None;
                         true
                     }
                     Event::KeyDown => match event_key() {
                         Key::Escape => {
                             println!("Quit. (cause Key::Escape is triggered)");
+
+                            // 清空缓存的 bounding box 信息
+                            *start.borrow_mut() = None;
+                            *end.borrow_mut() = None;
                             quit();
                             true
                         }
                         Key::Enter | Key::KPEnter => {
                             println!("Quit. (cause Key::Enter | Key::KPEnter is triggered)");
+
                             quit();
                             true
                         }
