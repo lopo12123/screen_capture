@@ -10,8 +10,9 @@ fn main() {
     println!("use as test");
 
     // 交互式框选
-    let area = ScreenCapture::request_bounding(None);
-    println!("area: {:?}", area);
+    // let area = ScreenCapture::request_bounding(None);
+    let area = ScreenCapture::request_capture(None);
+    println!("area: {:?}", area.is_some());
 }
 
 #[cfg(test)]
@@ -55,9 +56,15 @@ mod unit_test {
 
     #[test]
     fn ss() {
-        let xy = get_real_wh_before_scale(1.5, (424, 960));
-        println!("xy: {xy:?}");
-        let screen1 = ScreenshotsImpl::get_by_point(xy.0 + 2, xy.1 + 2).map_or(1, |v| v.id);
-        println!("{screen1}");
+        let (a, b) = (2, 1);
+
+
+        println!("{}", i32::abs(2 - 1));
+        println!("{}", i32::abs(1 - 2));
+
+        // let xy = get_real_wh_before_scale(1.5, (424, 960));
+        // println!("xy: {xy:?}");
+        // let screen1 = ScreenshotsImpl::get_by_point(xy.0 + 2, xy.1 + 2).map_or(1, |v| v.id);
+        // println!("{screen1}");
     }
 }
