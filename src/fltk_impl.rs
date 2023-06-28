@@ -2,7 +2,7 @@ use fltk::app;
 use crate::declares::{ScreenInfo};
 use crate::fltk_impl::box_selection_impl::BoxSelectionImpl;
 use crate::screenshots_impl::ScreenshotsImpl;
-use crate::utils::get_real_xywh_before_scale;
+use crate::utils::get_origin_xywh;
 
 pub mod box_selection_impl;
 
@@ -17,7 +17,7 @@ impl FltkImpl {
 
                 // 真实宽高和原始宽高
                 let (x, y, w, h) = app::screen_xywh(sn);
-                let (x1, y1, w1, h1) = get_real_xywh_before_scale(sf, (x, y, w, h));
+                let (x1, y1, w1, h1) = get_origin_xywh(sf, (x, y, w, h));
 
                 // 中心点
                 let xc = x1 + w1 / 2;
@@ -48,7 +48,7 @@ impl FltkImpl {
 
             // 真实宽高和原始宽高
             let (x, y, w, h) = app::screen_xywh(sn);
-            let (x1, y1, w1, h1) = get_real_xywh_before_scale(sf, (x, y, w, h));
+            let (x1, y1, w1, h1) = get_origin_xywh(sf, (x, y, w, h));
 
             // 中心点
             let xc = x1 + w1 / 2;

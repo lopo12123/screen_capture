@@ -14,7 +14,7 @@ use fltk::enums::{Key};
 use fltk::group::{Pack, PackType};
 use fltk::image::SvgImage;
 use crate::declares::{ScreenInfo};
-use crate::utils::{calc_boundary_constraints, get_position_of_buttons, get_real_coord_of_event, get_real_wh_before_scale};
+use crate::utils::{calc_boundary_constraints, get_position_of_buttons, get_primary_coord_of_event, get_origin_wh};
 
 const SVG_CANCEL: &str = r##"<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke="red" stroke-width="1.5" stroke-linecap="round"><path d="M5.26904 5.39746L18.4684 18.5968"/><path d="M18.7307 5.39746L5.39738 18.7308"/></svg>"##;
 const SVG_CONFIRM: &str = r##"<svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" fill="green" width="200" height="200"><path d="M892.064 261.888a31.936 31.936 0 0 0-45.216 1.472L421.664 717.248l-220.448-185.216a32 32 0 1 0-41.152 48.992l243.648 204.704a31.872 31.872 0 0 0 20.576 7.488 31.808 31.808 0 0 0 23.36-10.112L893.536 307.136a32 32 0 0 0-1.472-45.248z"/></svg>"##;
@@ -94,7 +94,7 @@ impl WindowPrefab {
         let end = Rc::new(RefCell::new(None));
 
         let (x, y, w, h) = screen.xywh_real;
-        let (w, h) = get_real_wh_before_scale(screen.scale_factor, (w, h));
+        let (w, h) = get_origin_wh(screen.scale_factor, (w, h));
 
         // region 窗口设置
         // region 窗口
@@ -190,11 +190,14 @@ impl WindowPrefab {
             let screen_size = (screen.xywh_real.2, screen.xywh_real.3);
 
             let offs = offs.clone();
+
             let start = start.clone();
             let end = end.clone();
 
-            let mut start_ev = (0, 0);
-            let mut start_logic = (0, 0);
+            // 当前 sf 的坐标
+            let mut start_real = (0, 0);
+            // sf = 1 时的坐标
+            let mut start_origin = (0, 0);
 
             move |f, ev| {
                 let offs = offs.borrow_mut();
@@ -203,55 +206,61 @@ impl WindowPrefab {
                 match ev {
                     Event::Push => {
                         // 记录按下位置
-                        start_ev = event_coords();
-                        start_logic = get_real_coord_of_event(sfp, sft, start_ev);
-                        *start.borrow_mut() = Some(start_logic);
+                        start_real = event_coords();
+                        *start.borrow_mut() = Some(start_real);
                         *end.borrow_mut() = None;
 
-                        println!("Event::Push on screen {{{sn}}} at {start_logic:?}(ev: {:?}, mouse: {:?})", start_ev, get_mouse());
+                        // 绘图需要 origin 坐标
+                        start_origin = get_primary_coord_of_event(sfp, sft, start_real);
+
+                        println!("Event::Push on screen {{{sn}}} at {start_origin:?}(ev: {start_real:?}, mouse: {:?})", get_mouse());
                         true
                     }
                     Event::Released => {
                         // 记录松开位置
-                        let end_ev = event_coords();
-                        let end_ev_constrained = calc_boundary_constraints(end_ev, screen_size);
-                        println!("ev: {end_ev:?}; bound: {end_ev_constrained:?}");
-                        let end_logic = get_real_coord_of_event(sfp, sft, end_ev_constrained);
-                        *end.borrow_mut() = Some(end_logic);
+                        let end_real = calc_boundary_constraints(event_coords(), screen_size);
+                        *end.borrow_mut() = Some(end_real);
 
-                        let (pack_x, pack_y) = get_position_of_buttons(start_ev, end_ev_constrained, screen_size);
+                        // 绘图需要 origin 坐标
+                        let end_origin = get_primary_coord_of_event(sfp, sft, end_real);
+
+                        let (pack_x, pack_y) = get_position_of_buttons(start_real, end_real, screen_size);
                         pack.set_pos(pack_x, pack_y);
 
-                        println!("Event::Released on screen {{{sn}}} at {end_logic:?} (ev: {:?}, mouse: {:?})", end_ev, get_mouse());
+                        println!("Event::Released on screen {{{sn}}} at {end_origin:?} (ev: {end_real:?}, mouse: {:?})", get_mouse());
                         true
                     }
                     Event::Drag => {
+                        // 记录鼠标当前位置
+                        let curr_real = event_coords();
+
+                        // region 离屏重绘
                         offs.begin();
 
                         // 清屏
                         draw_rect_fill(0, 0, w, h, config.canvas_background_color);
-                        // 获取鼠标当前位置
-                        // let curr_logic = event_coords();
-                        let curr_logic = get_real_coord_of_event(sfp, sft, event_coords());
+                        let curr_origin = get_primary_coord_of_event(sfp, sft, curr_real);
                         // 绘制矩形框
-                        let xywh_real: (i32, i32, i32, i32) = (
-                            min(start_logic.0, curr_logic.0),
-                            min(start_logic.1, curr_logic.1),
-                            (curr_logic.0 - start_logic.0).abs(),
-                            (curr_logic.1 - start_logic.1).abs(),
+                        let xywh_origin: (i32, i32, i32, i32) = (
+                            min(start_origin.0, curr_origin.0),
+                            min(start_origin.1, curr_origin.1),
+                            (curr_origin.0 - start_origin.0).abs(),
+                            (curr_origin.1 - start_origin.1).abs(),
                         );
                         draw_rect_fill(
-                            xywh_real.0,
-                            xywh_real.1,
-                            xywh_real.2,
-                            xywh_real.3,
+                            xywh_origin.0,
+                            xywh_origin.1,
+                            xywh_origin.2,
+                            xywh_origin.3,
                             config.rect_background_color,
                         );
 
                         offs.end();
+                        // endregion
 
                         // 同步到画布
                         f.redraw();
+
                         true
                     }
                     _ => false,

@@ -1,9 +1,8 @@
-use std::cmp::{max, min};
 use fltk::app;
 use crate::declares::{CaptureInfo, ScreenInfo};
 use crate::fltk_impl::FltkImpl;
 use crate::screenshots_impl::ScreenshotsImpl;
-use crate::utils::{get_real_xywh_before_scale, p1p2_to_xywh};
+use crate::utils::{get_origin_xywh, p1p2_to_xywh};
 
 /// ffi 暴露的方法
 pub struct ScreenCapture {}
@@ -91,8 +90,16 @@ impl ScreenCapture {
             Some((sid, sf, x1, y1, x2, y2)) => {
                 println!("- End of Task 1. The user has selected the area: [start = ({x1}, {y1}), end = ({x2}, {y2}), sf = {sf}] on screen {{{sid}}}");
                 println!("- Task 2 start. performing 'capture_area' ...");
-                let (x, y, w, h) = p1p2_to_xywh(x1, y1, x2, y2);
-                // let () = get_real_xywh_before_scale(sf, (x, y, w, h));
+                let (mut x, mut y, mut w, mut h) = p1p2_to_xywh(x1, y1, x2, y2);
+                if sf != 1.0 {
+                    println!("'scale_factor' is detected not to be 1.0, performing coordinate conversion...");
+                    let (_x, _y, _w, _h) = get_origin_xywh(sf, (x, y, w as i32, h as i32));
+                    x = _x;
+                    y = _y;
+                    w = _w as u32;
+                    h = _h as u32;
+                }
+                println!("Capturing target area... (xywh = ({w}, {y}, {w}, {h}))");
                 println!("========== ========= ========== ========= ========== =========");
                 ScreenCapture::capture_area_by_id(sid, x, y, w, h)
             }

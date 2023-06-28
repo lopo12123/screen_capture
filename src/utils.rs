@@ -5,8 +5,8 @@ fn clamp(suppose: i32, low: i32, high: i32) -> i32 {
     min(high, max(low, suppose))
 }
 
-/// 根据聚焦的屏幕和目标屏幕的 scale_factor 换算出坐标
-pub fn get_real_coord_of_event(sfp: f32, sft: f32, ev_coord: (i32, i32)) -> (i32, i32) {
+/// 根据聚焦的屏幕和目标屏幕的 scale_factor 换算出在程序启动的窗口的sf下的坐标 (sf = sfp 时)
+pub fn get_primary_coord_of_event(sfp: f32, sft: f32, ev_coord: (i32, i32)) -> (i32, i32) {
     if sfp == sft {
         ev_coord
     } else {
@@ -21,7 +21,7 @@ pub fn get_real_coord_of_event(sfp: f32, sft: f32, ev_coord: (i32, i32)) -> (i32
 }
 
 /// 获取 scale_factor 为 1 时的宽高
-pub fn get_real_wh_before_scale(sf: f32, wh: (i32, i32)) -> (i32, i32) {
+pub fn get_origin_wh(sf: f32, wh: (i32, i32)) -> (i32, i32) {
     if sf == 1.0 {
         wh
     } else {
@@ -33,7 +33,7 @@ pub fn get_real_wh_before_scale(sf: f32, wh: (i32, i32)) -> (i32, i32) {
 }
 
 /// 获取 scale_factor 为 1 时的位置和宽高
-pub fn get_real_xywh_before_scale(sf: f32, xywh: (i32, i32, i32, i32)) -> (i32, i32, i32, i32) {
+pub fn get_origin_xywh(sf: f32, xywh: (i32, i32, i32, i32)) -> (i32, i32, i32, i32) {
     if sf == 1.0 {
         xywh
     } else {
