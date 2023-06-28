@@ -379,8 +379,8 @@ impl BoxSelectionImpl {
 
     /// 启动窗口进行框选
     ///
-    /// `(screen_id: u32, x1: i32, y1: i32, x2: i32, y2: i32)`
-    pub fn run(&mut self) -> Option<(u32, i32, i32, i32, i32)> {
+    /// `(screen_id: u32, scale_factor: u32, x1: i32, y1: i32, x2: i32, y2: i32)`
+    pub fn run(&mut self) -> Option<(u32, f32, i32, i32, i32, i32)> {
         // 展示全部窗口
         for prefab in &mut self.prefabs {
             prefab.show();
@@ -405,10 +405,14 @@ impl BoxSelectionImpl {
         }
 
         // 获取
-        let mut bounding_box: Option<(u32, i32, i32, i32, i32)> = None;
+        let mut bounding_box: Option<(u32, f32, i32, i32, i32, i32)> = None;
         for prefab in &mut self.prefabs {
             if let Some(v) = prefab.get_bounding_box() {
-                bounding_box = Some((prefab.screen.screen_id, v.0, v.1, v.2, v.3))
+                bounding_box = Some((
+                    prefab.screen.screen_id,
+                    prefab.screen.scale_factor,
+                    v.0, v.1, v.2, v.3
+                ))
             }
         }
 
