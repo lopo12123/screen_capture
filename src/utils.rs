@@ -30,7 +30,7 @@ pub fn get_real_xywh_before_scale(sf: f32, xywh: (i32, i32, i32, i32)) -> (i32, 
 }
 
 /// 获取按钮组的部署位置 (按钮组: 60 * 30)
-pub fn get_position_of_buttons(start: (i32, i32), end: (i32, i32)) -> (i32, i32) {
+pub fn get_position_of_buttons(start: (i32, i32), end: (i32, i32), screen_size: (i32, i32)) -> (i32, i32) {
     // 包围盒
     let dis_x = i32::abs(start.0 - end.0);
     let dis_y = i32::abs(start.1 - end.1);
@@ -39,5 +39,16 @@ pub fn get_position_of_buttons(start: (i32, i32), end: (i32, i32)) -> (i32, i32)
     let xr = max(start.0, end.0);
     let yr = max(start.1, end.1);
 
-    (xr - 60, yr - 30)
+    // 锚点 y 坐标
+    let anchor_y = if yr > 50 { yr - 30 } else { yr };
+
+    if dis_x > 100 && dis_y > 50 {
+        // 1. 默认情况 - 内部右下角
+        (xr - 60, anchor_y)
+    } else if screen_size.0 - xr > 100 {
+        // 2. 选框过小 - 外部右下角
+        (xr, anchor_y)
+    } else {
+        (xr - dis_x - 60, anchor_y)
+    }
 }

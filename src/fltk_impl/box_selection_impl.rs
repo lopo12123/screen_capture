@@ -189,6 +189,7 @@ impl WindowPrefab {
         // 监听画布交互
         canvas.handle({
             let sn = screen.screen_num;
+            let screen_size = (screen.xywh_real.2, screen.xywh_real.3);
 
             let offs = offs.clone();
             let start = start.clone();
@@ -218,7 +219,7 @@ impl WindowPrefab {
                         let end_logic = get_real_coord_of_event(sfp, sft, end_ev);
                         *end.borrow_mut() = Some(end_logic);
 
-                        let (pack_x, pack_y) = get_position_of_buttons(start_ev, end_ev);
+                        let (pack_x, pack_y) = get_position_of_buttons(start_ev, end_ev, screen_size);
                         pack.set_pos(pack_x, pack_y);
 
                         println!("Event::Released on screen {{{sn}}} at {end_logic:?} (this: coords {:?}, global: {:?})", event_coords(), get_mouse());
