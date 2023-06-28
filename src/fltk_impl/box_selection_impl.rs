@@ -73,8 +73,6 @@ impl BoxSelectionConfig {
         BoxSelectionConfig {
             canvas_background_color: Color::Black,
             rect_background_color: Color::White,
-            // canvas_background_color: Color::White,
-            // rect_background_color: Color::Black,
         }
     }
 }

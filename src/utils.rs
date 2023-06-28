@@ -47,8 +47,9 @@ pub fn get_position_of_buttons(start: (i32, i32), end: (i32, i32), screen_size: 
         (xr - 60, anchor_y)
     } else if screen_size.0 - xr > 100 {
         // 2. 选框过小 - 外部右下角
-        (xr, anchor_y)
+        (xr + 10, anchor_y)
     } else {
-        (xr - dis_x - 60, anchor_y)
+        // 2. 选框过右 - 外部左下角
+        (xr - dis_x - 60 - 10, anchor_y)
     }
 }
