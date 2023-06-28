@@ -69,7 +69,7 @@ impl ScreenshotsImpl {
         }
     }
 
-    /// 截取指定id的屏幕的指定区域 (x,y为相对于当前屏幕的x,y坐标)
+    /// 截取指定id的屏幕的指定区域 (x,y为相对于当前屏幕的x,y坐标. 需要转换为 sf=1)
     pub fn capture_area_by_id(screen_id: u32, x: i32, y: i32, w: u32, h: u32) -> Option<CaptureInfo> {
         match ScreenshotsImpl::get_screen_by_id(screen_id) {
             Some(screen) => {
@@ -85,7 +85,7 @@ impl ScreenshotsImpl {
         }
     }
 
-    /// 截取指定点所在的屏幕的指定区域 (px,py为全局坐标, x,y为相对于当前屏幕的x,y坐标)
+    /// 截取指定点所在的屏幕的指定区域 (px,py为全局坐标, x,y为相对于当前屏幕的x,y坐标. 需要转换为 sf=1)
     pub fn capture_area_by_point(px: i32, py: i32, x: i32, y: i32, w: u32, h: u32) -> Option<CaptureInfo> {
         match ScreenshotsImpl::get_screen_by_point(px, py) {
             Some(screen) => {
