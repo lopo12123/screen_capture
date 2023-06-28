@@ -1,4 +1,9 @@
-use std::cmp::max;
+use std::cmp::{max, min};
+
+// clamp 函数
+fn clamp(suppose: i32, low: i32, high: i32) -> i32 {
+    min(high, max(low, suppose))
+}
 
 /// 根据聚焦的屏幕和目标屏幕的 scale_factor 换算出坐标
 pub fn get_real_coord_of_event(sfp: f32, sft: f32, ev_coord: (i32, i32)) -> (i32, i32) {
@@ -26,6 +31,14 @@ pub fn get_real_xywh_before_scale(sf: f32, xywh: (i32, i32, i32, i32)) -> (i32, 
         (xywh.1 as f32 * sf) as i32,
         (xywh.2 as f32 * sf) as i32,
         (xywh.3 as f32 * sf) as i32,
+    )
+}
+
+/// 边界约束 (当鼠标移到屏幕外时触发约束)
+pub fn calc_boundary_constraints(p: (i32, i32), screen_size: (i32, i32)) -> (i32, i32) {
+    (
+        clamp(p.0, 0, screen_size.0),
+        clamp(p.1, 0, screen_size.1),
     )
 }
 
