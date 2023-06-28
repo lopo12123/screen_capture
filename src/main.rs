@@ -47,7 +47,7 @@ pub mod screen_capture;
 // }
 
 fn main() {
-    let system = support::init(file!());
+    let system = support::init();
 
     let mut value = 0;
     let choices = ["test test this is 1", "test test this is 2"];
