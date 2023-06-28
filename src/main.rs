@@ -1,3 +1,6 @@
+use std::env::{args};
+use std::fs::File;
+use std::io::Write;
 use crate::screen_capture::ScreenCapture;
 
 mod fltk_impl;
@@ -6,20 +9,45 @@ mod screen_capture;
 mod declares;
 mod utils;
 
+/// # Examples
+///
+/// ``` shell
+/// // Running without parameters will save the image as 'capture.png' by default
+/// screen_capture.exe
+/// // Running with --out=[file.suffix] will save the image as '[file.suffix]'
+/// screen_capture.exe --out=my-capture.png
+/// ```
 fn main() {
-    println!("use as test");
+    let mut filename = "capture.png".to_string();
+    for arg in args() {
+        if let Some(v) = arg.strip_prefix("--out=") {
+            filename = v.to_string();
+        }
+    }
 
-    // 交互式框选
-    // let area = ScreenCapture::request_bounding(None);
-    // println!("area: {:?}", area);
+    println!("filename: {:?}", filename);
 
-    let area = ScreenCapture::request_capture(None);
-    println!("area: {:?}", area.is_some());
+    // 交互式框选并获取目标区域 buffer
+    match ScreenCapture::request_capture(None) {
+        Some(v) => match File::create(&filename) {
+            Ok(mut file) => match file.write_all(&v.buffer) {
+                Ok(_) => println!("The captured image has been saved as '{filename}'"),
+                Err(_) => println!("Fail to write file '{filename}'"),
+            },
+            Err(_) => {
+                println!("Fail to create file '{filename}'");
+            }
+        }
+        None => {
+            println!("Cancel");
+        }
+    }
 }
 
 #[cfg(test)]
 mod unit_test {
     use std::cell::RefCell;
+    use std::env::args;
     use std::rc::Rc;
     use std::thread::sleep;
     use std::time::Duration;
@@ -73,11 +101,6 @@ mod unit_test {
 
         create_button_pair((100, 100));
 
-        // wind.add(&btn1);
-        // wind.add(&btn2);
-        // btn1.center_of(&wind);
-        // btn2.center_of(&wind);
-
         wind.end();
         wind.show();
         app.run().unwrap();
@@ -91,20 +114,6 @@ mod unit_test {
         println!("{} | {}", btn_cancel.is_ok(), btn_cancel.is_ok());
     }
 
-    fn closure() {
-        fn create_pair<F>(on_cancel: F) where F: FnMut(&mut Button) + 'static {
-            on_cancel();
-        }
-
-        let count = Rc::new(RefCell::new(0));
-
-        create_pair({
-            let count = count.clone();
-            move || {
-                *count.borrow_mut() += 1;
-                let c = *count.borrow_mut();
-                println!("current: {c}");
-            }
-        });
-    }
+    #[test]
+    fn args() {}
 }
