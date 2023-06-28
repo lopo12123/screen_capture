@@ -67,8 +67,6 @@ mod unit_test {
         let app = app::App::default();
         let mut wind = Window::new(640, 360, 1280, 720, "Hello from rust");
 
-        create_button_pair((100, 100));
-
         wind.end();
         wind.show();
         app.run().unwrap();
