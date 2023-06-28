@@ -331,13 +331,6 @@ impl WindowPrefab {
         self.win.set_opacity(0.3);
     }
 
-    /// 聚焦
-    #[deprecated]
-    pub fn focus(&mut self) {
-        println!("Focus on window {}", self.screen.screen_num);
-        self.win.make_current();
-    }
-
     /// 获取选框
     ///
     /// `(x1: i32, y1: i32, x2: i32, y2: i32)`
