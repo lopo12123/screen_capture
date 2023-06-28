@@ -1,6 +1,7 @@
 use std::env::{args};
 use std::fs::File;
 use std::io::Write;
+use crate::egui_impl::demo;
 use crate::screen_capture::ScreenCapture;
 
 mod fltk_impl;
@@ -8,6 +9,7 @@ mod screenshots_impl;
 mod screen_capture;
 mod declares;
 mod utils;
+mod egui_impl;
 
 /// # Examples
 ///
@@ -17,29 +19,39 @@ mod utils;
 /// // Running with --out=[file.suffix] will save the image as '[file.suffix]'
 /// screen_capture.exe --out=my-capture.png
 /// ```
+// fn main() {
+//     let mut filename = "capture.png".to_string();
+//     for arg in args() {
+//         if let Some(v) = arg.strip_prefix("--out=") {
+//             filename = v.to_string();
+//         }
+//     }
+//
+//     println!("filename: {:?}", filename);
+//
+//     // 交互式框选并获取目标区域 buffer
+//     match ScreenCapture::request_capture(None) {
+//         Some(v) => match File::create(&filename) {
+//             Ok(mut file) => match file.write_all(&v.buffer) {
+//                 Ok(_) => println!("The captured image has been saved as '{filename}'"),
+//                 Err(_) => println!("Fail to write file '{filename}'"),
+//             },
+//             Err(_) => {
+//                 println!("Fail to create file '{filename}'");
+//             }
+//         }
+//         None => {
+//             println!("Cancel");
+//         }
+//     }
+// }
 fn main() {
-    let mut filename = "capture.png".to_string();
-    for arg in args() {
-        if let Some(v) = arg.strip_prefix("--out=") {
-            filename = v.to_string();
+    match demo() {
+        Ok(_) => {
+            println!("done");
         }
-    }
-
-    println!("filename: {:?}", filename);
-
-    // 交互式框选并获取目标区域 buffer
-    match ScreenCapture::request_capture(None) {
-        Some(v) => match File::create(&filename) {
-            Ok(mut file) => match file.write_all(&v.buffer) {
-                Ok(_) => println!("The captured image has been saved as '{filename}'"),
-                Err(_) => println!("Fail to write file '{filename}'"),
-            },
-            Err(_) => {
-                println!("Fail to create file '{filename}'");
-            }
-        }
-        None => {
-            println!("Cancel");
+        Err(err) => {
+            println!("error: {:?}", err);
         }
     }
 }

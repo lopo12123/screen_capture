@@ -10,11 +10,28 @@ crate-type = ["cdylib"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+# napi support
 napi = "2.11.2"
 napi-derive = "2.11.1"
 
-fltk = { version = "1.4.5", features = ["no-pango", "no-images"] }
+# clipboard
+copypasta = "0.8.2"
+
+# screenshot
 screenshots = { version = "0.6.0" }
+
+# gui: fltk
+fltk = { version = "1.4.5", features = ["no-pango", "no-images"] }
+
+# gui: egui (as 'eframe' is a framework, 'egui' is a library)
+eframe = "0.22.0"
+
+# gui: glium + imgui-glium-renderer + imgui + imgui-winit-support+ winit
+#glium = { version = "0.32.1", default-features = true }
+#imgui-glium-renderer = "0.11.0"
+#imgui = { version = "0.11.0" }
+#imgui-winit-support = "0.11.0"
+#winit = "0.28.6"
 
 [build-dependencies]
 napi-build = "2.0.1"
