@@ -54,6 +54,16 @@ pub fn calc_boundary_constraints(p: (i32, i32), screen_size: (i32, i32)) -> (i32
     )
 }
 
+/// 获取由两个点确定的矩形的 xywh (最小确定一个像素)
+pub fn p1p2_to_xywh(x1: i32, y1: i32, x2: i32, y2: i32) -> (i32, i32, u32, u32) {
+    (
+        min(x1, x2),
+        min(y1, y2),
+        max(i32::abs(x2 - x1), 1) as u32,
+        max(i32::abs(y2 - y1), 1) as u32,
+    )
+}
+
 /// 获取按钮组的部署位置 (按钮组: 60 * 30)
 pub fn get_position_of_buttons(start: (i32, i32), end: (i32, i32), screen_size: (i32, i32)) -> (i32, i32) {
     // 包围盒

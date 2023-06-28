@@ -10,11 +10,11 @@ fn main() {
     println!("use as test");
 
     // 交互式框选
-    let area = ScreenCapture::request_bounding(None);
-    println!("area: {:?}", area);
+    // let area = ScreenCapture::request_bounding(None);
+    // println!("area: {:?}", area);
 
-    // let area = ScreenCapture::request_capture(None);
-    // println!("area: {:?}", area.is_some());
+    let area = ScreenCapture::request_capture(None);
+    println!("area: {:?}", area.is_some());
 }
 
 #[cfg(test)]

@@ -78,15 +78,17 @@ impl FfiConvertible<CaptureInfoFfi> for CaptureInfo {
 #[napi(object)]
 pub struct BoundingBox {
     pub screen_id: u32,
+    pub scale_factor: f64,
     #[napi(ts_type = "[x1: number, y1: number, x2: number, y2: number]")]
     pub bounding_box: Vec<i32>,
 }
 
 impl BoundingBox {
-    pub fn from_tuple(tuple: (u32, i32, i32, i32, i32)) -> BoundingBox {
+    pub fn from_tuple(tuple: (u32, f32, i32, i32, i32, i32)) -> BoundingBox {
         BoundingBox {
             screen_id: tuple.0,
-            bounding_box: vec![tuple.1, tuple.2, tuple.3, tuple.4],
+            scale_factor: tuple.1 as f64,
+            bounding_box: vec![tuple.2, tuple.3, tuple.4, tuple.5],
         }
     }
 }

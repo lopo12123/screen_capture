@@ -63,7 +63,7 @@ impl FfiUse {
     ///
     /// 交互式选择某区域
     ///
-    /// `(screen_id: u32, x1: i32, y1: i32, x2: i32, y2: i32)`
+    /// `(screen_id: u32, scale_factor: u32, x1: i32, y1: i32, x2: i32, y2: i32)`
     #[napi]
     pub fn request_bounding(sfp: Option<f64>) -> napi::Result<Option<BoundingBox>> {
         Ok(match ScreenCapture::request_bounding(sfp.map_or(None, |v| Some(v as f32))) {

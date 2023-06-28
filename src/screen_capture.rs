@@ -1,8 +1,9 @@
-use std::cmp::max;
+use std::cmp::{max, min};
 use fltk::app;
 use crate::declares::{CaptureInfo, ScreenInfo};
 use crate::fltk_impl::FltkImpl;
 use crate::screenshots_impl::ScreenshotsImpl;
+use crate::utils::{get_real_xywh_before_scale, p1p2_to_xywh};
 
 /// ffi 暴露的方法
 pub struct ScreenCapture {}
@@ -32,14 +33,14 @@ impl ScreenCapture {
 
     /// re-export
     ///
-    /// 截取指定id的屏幕的指定区域 (x,y为相对于当前屏幕的x,y坐标)
+    /// 截取指定id的屏幕的指定区域 (x,y为相对于当前屏幕的x,y坐标. 需要转换为 sf=1)
     pub fn capture_area_by_id(screen_id: u32, x: i32, y: i32, w: u32, h: u32) -> Option<CaptureInfo> {
         ScreenshotsImpl::capture_area_by_id(screen_id, x, y, w, h)
     }
 
     /// re-export
     ///
-    /// 截取指定点所在的屏幕的指定区域 (px,py为全局坐标, x,y为相对于当前屏幕的x,y坐标)
+    /// 截取指定点所在的屏幕的指定区域 (px,py为全局坐标, x,y为相对于当前屏幕的x,y坐标. 需要转换为 sf=1)
     pub fn capture_area_by_point(px: i32, py: i32, x: i32, y: i32, w: u32, h: u32) -> Option<CaptureInfo> {
         ScreenshotsImpl::capture_area_by_point(px, py, x, y, w, h)
     }
@@ -49,8 +50,8 @@ impl ScreenCapture {
     ///
     /// 交互式选择某区域
     ///
-    /// `(screen_id: u32, x1: i32, y1: i32, x2: i32, y2: i32)`
-    pub fn request_bounding(sfp: Option<f32>) -> Option<(u32, i32, i32, i32, i32)> {
+    /// `(screen_id: u32, scale_factor: f32, x1: i32, y1: i32, x2: i32, y2: i32)`
+    pub fn request_bounding(sfp: Option<f32>) -> Option<(u32, f32, i32, i32, i32, i32)> {
         let sfp = match sfp {
             Some(v) => {
                 println!("The 'request_bounding' method is called with 'sfp' of {v}, continuing ...");
@@ -87,15 +88,13 @@ impl ScreenCapture {
         println!("- Task 1 start. performing 'request_bounding' ...");
         println!("========== ========= ========== ========= ========== =========");
         match ScreenCapture::request_bounding(sfp) {
-            Some((sid, x1, y1, x2, y2)) => {
-                println!("- End of Task 1. The user has selected the area: [start: ({x1}, {y1}), end: ({x2}, {y2})] on screen {{{sid}}}");
+            Some((sid, sf, x1, y1, x2, y2)) => {
+                println!("- End of Task 1. The user has selected the area: [start = ({x1}, {y1}), end = ({x2}, {y2}), sf = {sf}] on screen {{{sid}}}");
                 println!("- Task 2 start. performing 'capture_area' ...");
+                let (x, y, w, h) = p1p2_to_xywh(x1, y1, x2, y2);
+                // let () = get_real_xywh_before_scale(sf, (x, y, w, h));
                 println!("========== ========= ========== ========= ========== =========");
-                ScreenCapture::capture_area_by_id(
-                    sid, x1, y1,
-                    max(i32::abs(x2 - x1), 1) as u32,
-                    max(i32::abs(y2 - y1), 1) as u32,
-                )
+                ScreenCapture::capture_area_by_id(sid, x, y, w, h)
             }
             None => {
                 println!("- Task 1 end.");
