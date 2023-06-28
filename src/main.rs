@@ -1,15 +1,15 @@
 use std::env::{args};
 use std::fs::File;
 use std::io::Write;
-use crate::egui_impl::demo;
+use imgui::*;
 use crate::screen_capture::ScreenCapture;
 
 mod fltk_impl;
 mod screenshots_impl;
-mod screen_capture;
 mod declares;
 mod utils;
-mod egui_impl;
+mod support;
+pub mod screen_capture;
 
 /// # Examples
 ///
@@ -45,15 +45,33 @@ mod egui_impl;
 //         }
 //     }
 // }
+
 fn main() {
-    match demo() {
-        Ok(_) => {
-            println!("done");
-        }
-        Err(err) => {
-            println!("error: {:?}", err);
-        }
-    }
+    let system = support::init(file!());
+
+    let mut value = 0;
+    let choices = ["test test this is 1", "test test this is 2"];
+
+    system.main_loop(move |_, ui| {
+        ui.window("Hello world")
+            .size([300.0, 110.0], Condition::FirstUseEver)
+            .build(|| {
+                ui.text_wrapped("Hello world!");
+                ui.text_wrapped("こんにちは世界！");
+                if ui.button(choices[value]) {
+                    value += 1;
+                    value %= 2;
+                }
+
+                ui.button("This...is...imgui-rs!");
+                ui.separator();
+                let mouse_pos = ui.io().mouse_pos;
+                ui.text(format!(
+                    "Mouse Position: ({:.1},{:.1})",
+                    mouse_pos[0], mouse_pos[1]
+                ));
+            });
+    });
 }
 
 #[cfg(test)]
