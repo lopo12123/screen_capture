@@ -29,11 +29,11 @@ pub fn create_screen_pair(
     let (x, y, w, h) = physical_xywh;
 
     let position = PhysicalPosition::new(x, y);
-    let inner_size = PhysicalSize::new(w, h);
+    let inner_size = PhysicalSize::new(w, h - 100);
 
     let builder = WindowBuilder::default()
         .with_title(String::from(TITLE))
-        .with_decorations(false)
+        // .with_decorations(false)
         .with_always_on_top(true)
         .with_skip_taskbar(true)
         .with_resizable(false)

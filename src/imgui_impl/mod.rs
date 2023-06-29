@@ -10,9 +10,11 @@ pub struct ImguiImpl {}
 impl ImguiImpl {
     /// 计算将所有屏幕盖住的窗口的 xywh
     fn calc_bounding(captures: &Vec<CaptureInfo>) -> BoundingBox {
-        let (mut xl, mut yl, mut xh, mut yh) = (0i32, 0i32, 0i32, 0i32);
+        let (mut xl, mut yl, mut xh, mut yh) = (i32::MAX, i32::MAX, i32::MIN, i32::MIN);
 
         for capture in captures {
+            // println!("Screen To Bounding: xywh = ({}, {}, {}, {})", capture.physical_x, capture.physical_y, capture.physical_width, capture.physical_height);
+
             xl = min(xl, capture.physical_x);
             yl = min(yl, capture.physical_y);
             xh = max(xh, capture.physical_x + capture.physical_width);
@@ -25,19 +27,21 @@ impl ImguiImpl {
     /// 传入图像信息开始交互式选择区域
     pub fn bounding(captures: Vec<CaptureInfo>) {
         let system = core::prepare_system(ImguiImpl::calc_bounding(&captures));
+        let exit_code = system.main_loop(move |_, ui| {
+            // ui.window("My window via callback")
+            //     .position([10.0, 10.0], imgui::Condition::Always)
+            //     .size([1000.0, 1000.0], imgui::Condition::Always)
+            //     .build(|| {
+            //         ui.text("This content appears in a window");
+            //
+            //         // Everything in this callback appears in the window, like this button:
+            //         ui.button("This button");
+            //     });
 
-        system.main_loop(move |_, ui| {
-            ui.window("My window via callback")
-                .position([10.0, 10.0], imgui::Condition::Always)
-                .build(|| {
-                    ui.text("This content appears in a window");
-
-                    // Everything in this callback appears in the window, like this button:
-                    ui.button("This button");
-                });
-
-            ui.window("鼠标位置")
-                .build(|| ui.text(format!("Some variable: {:?}", ui.io().mouse_pos)));
+            // ui.window("鼠标位置")
+            //     .build(|| ui.text(format!("Some variable: {:?}", ui.io().mouse_pos)));
         });
+
+        println!("exit_code: {exit_code}");
     }
 }
