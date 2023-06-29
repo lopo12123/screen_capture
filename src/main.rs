@@ -11,6 +11,7 @@ use crate::imgui_impl::ImguiImpl;
 mod declares;
 mod screenshots_impl;
 mod imgui_impl;
+mod egui_impl;
 
 pub mod screen_capture;
 
