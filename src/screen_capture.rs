@@ -4,7 +4,7 @@ use crate::fltk_impl::FltkImpl;
 use crate::screenshots_impl::ScreenshotsImpl;
 use crate::utils::{get_origin_xywh, p1p2_to_xywh};
 
-/// ffi 暴露的方法
+/// 作为模块暴露的方法
 pub struct ScreenCapture {}
 
 #[allow(unused)]

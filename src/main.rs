@@ -1,14 +1,16 @@
 use std::env::{args};
 use std::fs::File;
 use std::io::Write;
-use imgui::*;
-use crate::screen_capture::ScreenCapture;
 
-mod fltk_impl;
-mod screenshots_impl;
+use crate::screen_capture::ScreenCapture;
+use crate::imgui_impl::{launch_imgui_app};
+
 mod declares;
 mod utils;
-mod support;
+mod fltk_impl;
+mod screenshots_impl;
+mod imgui_impl;
+
 pub mod screen_capture;
 
 /// # Examples
@@ -19,59 +21,33 @@ pub mod screen_capture;
 /// // Running with --out=[file.suffix] will save the image as '[file.suffix]'
 /// screen_capture.exe --out=my-capture.png
 /// ```
-// fn main() {
-//     let mut filename = "capture.png".to_string();
-//     for arg in args() {
-//         if let Some(v) = arg.strip_prefix("--out=") {
-//             filename = v.to_string();
-//         }
-//     }
-//
-//     println!("filename: {:?}", filename);
-//
-//     // 交互式框选并获取目标区域 buffer
-//     match ScreenCapture::request_capture(None) {
-//         Some(v) => match File::create(&filename) {
-//             Ok(mut file) => match file.write_all(&v.buffer) {
-//                 Ok(_) => println!("The captured image has been saved as '{filename}'"),
-//                 Err(_) => println!("Fail to write file '{filename}'"),
-//             },
-//             Err(_) => {
-//                 println!("Fail to create file '{filename}'");
-//             }
-//         }
-//         None => {
-//             println!("Cancel");
-//         }
-//     }
-// }
-
 fn main() {
-    let system = support::init();
+    launch_imgui_app();
 
-    let mut value = 0;
-    let choices = ["test test this is 1", "test test this is 2"];
-
-    system.main_loop(move |_, ui| {
-        ui.window("Hello world")
-            .size([300.0, 110.0], Condition::FirstUseEver)
-            .build(|| {
-                ui.text_wrapped("Hello world!");
-                ui.text_wrapped("こんにちは世界！");
-                if ui.button(choices[value]) {
-                    value += 1;
-                    value %= 2;
-                }
-
-                ui.button("This...is...imgui-rs!");
-                ui.separator();
-                let mouse_pos = ui.io().mouse_pos;
-                ui.text(format!(
-                    "Mouse Position: ({:.1},{:.1})",
-                    mouse_pos[0], mouse_pos[1]
-                ));
-            });
-    });
+    // let mut filename = "capture.png".to_string();
+    // for arg in args() {
+    //     if let Some(v) = arg.strip_prefix("--out=") {
+    //         filename = v.to_string();
+    //     }
+    // }
+    //
+    // println!("filename: {:?}", filename);
+    //
+    // // 交互式框选并获取目标区域 buffer
+    // match ScreenCapture::request_capture(None) {
+    //     Some(v) => match File::create(&filename) {
+    //         Ok(mut file) => match file.write_all(&v.buffer) {
+    //             Ok(_) => println!("The captured image has been saved as '{filename}'"),
+    //             Err(_) => println!("Fail to write file '{filename}'"),
+    //         },
+    //         Err(_) => {
+    //             println!("Fail to create file '{filename}'");
+    //         }
+    //     }
+    //     None => {
+    //         println!("Cancel");
+    //     }
+    // }
 }
 
 #[cfg(test)]
