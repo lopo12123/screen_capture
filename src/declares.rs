@@ -6,7 +6,7 @@ pub struct CaptureInfo {
     pub scale_factor: f64,
     pub physical_x: i32,
     pub physical_y: i32,
-    pub physical_width: u32,
-    pub physical_height: u32,
+    pub physical_width: i32,
+    pub physical_height: i32,
     pub buffer: Vec<u8>,
 }

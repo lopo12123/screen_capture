@@ -6,14 +6,13 @@ use std::fs::File;
 use std::io::Write;
 
 use crate::screen_capture::ScreenCapture;
-use crate::imgui_impl::{launch_imgui_app};
+use crate::imgui_impl::ImguiImpl;
 
 mod declares;
-mod utils;
 mod screenshots_impl;
+mod imgui_impl;
 
 pub mod screen_capture;
-mod imgui_impl;
 
 /// # Examples
 ///
@@ -24,13 +23,13 @@ mod imgui_impl;
 /// screen_capture.exe --out=my-capture.png
 /// ```
 fn main() {
-    // launch_imgui_app();
+    ScreenCapture::capture_with_crop();
 
-    for screen in ScreenCapture::capture() {
-        println!("{}", screen.scale_factor);
-        println!("{} x {}", screen.physical_x, screen.physical_y);
-        println!("{} x {}", screen.physical_width, screen.physical_height);
-    }
+    // for screen in ScreenCapture::capture() {
+    //     println!("{}", screen.scale_factor);
+    //     println!("{} x {}", screen.physical_x, screen.physical_y);
+    //     println!("{} x {}", screen.physical_width, screen.physical_height);
+    // }
 
     // let mut filename = "capture.png".to_string();
     // for arg in args() {

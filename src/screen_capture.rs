@@ -1,4 +1,5 @@
 use crate::declares::{CaptureInfo};
+use crate::imgui_impl::ImguiImpl;
 use crate::screenshots_impl::ScreenshotsImpl;
 
 /// 作为模块暴露的方法
@@ -13,6 +14,10 @@ impl ScreenCapture {
 
     /// 截取所有屏幕并裁剪
     pub fn capture_with_crop() {
-        todo!()
+        let captures = ScreenshotsImpl::capture_all();
+        for capture in &captures {
+            println!("{}x{}", capture.physical_width, capture.physical_height);
+        }
+        ImguiImpl::bounding(captures);
     }
 }

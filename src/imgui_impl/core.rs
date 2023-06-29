@@ -1,5 +1,5 @@
 use glium::glutin;
-use glium::glutin::event::{Event, WindowEvent};
+use glium::glutin::event::{DeviceEvent, Event, WindowEvent};
 use glium::glutin::event_loop::{ControlFlow, EventLoop};
 use glium::glutin::window::WindowBuilder;
 use glium::{Display, Surface};
@@ -7,79 +7,47 @@ use imgui::{Context, FontConfig, FontGlyphRanges, FontSource, Ui};
 use imgui_glium_renderer::Renderer;
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
 use std::path::Path;
+use std::rc::Rc;
+use std::borrow::Borrow;
+use std::cell::RefCell;
+use std::ops::Deref;
 use std::time::Instant;
-use crate::imgui_impl::prefab::create_window_prefab;
+use crate::declares::CaptureInfo;
+use crate::imgui_impl::prefab::{BoundingBox, create_screen_pair, ScreenPair};
 
 pub struct System {
-    // 事件循环
+    // 主事件循环
     pub event_loop: EventLoop<()>,
-    // imgui 上下文
-    pub imgui: Context,
     // winit 平台相关
     pub platform: WinitPlatform,
+    // imgui 上下文
+    pub imgui: Context,
     // glium Display
     pub display: Display,
     // gilum 渲染
     pub renderer: Renderer,
 }
 
-pub fn init(logical_xywh: (f64, f64, f64, f64)) -> System {
-    // 事件循环
-    let event_loop = EventLoop::new();
-
-    // 展示
-    let display = Display::new(
-        create_window_prefab(logical_xywh),
-        glutin::ContextBuilder::new().with_vsync(true),
-        &event_loop,
-    ).expect("Failed to initialize display");
-    let display2 = Display::new(
-        create_window_prefab(logical_xywh),
-        glutin::ContextBuilder::new().with_vsync(true),
-        &event_loop,
-    ).expect("Failed to initialize display");
-
-    let mut imgui = Context::create();
-    imgui.set_ini_filename(None);
-
-    let mut platform = WinitPlatform::init(&mut imgui);
-    {
-        platform.attach_window(
-            imgui.io_mut(),
-            display.gl_window().window(),
-            HiDpiMode::Default
-        );
-    }
-
-    let renderer = Renderer::init(&mut imgui, &display).expect("Failed to initialize renderer");
-
-    System {
-        event_loop,
-        display,
-        imgui,
-        platform,
-        renderer,
-    }
-}
-
 impl System {
     pub fn main_loop<F: FnMut(&mut bool, &mut Ui) + 'static>(self, mut run_ui: F) {
         let System {
             event_loop,
-            display,
-            mut imgui,
             mut platform,
+            mut imgui,
+            display,
             mut renderer,
-            ..
         } = self;
+
         let mut last_frame = Instant::now();
 
         event_loop.run(move |event, _, control_flow| match event {
+            // 和窗口事件相关的逻辑 (在此处更新 imgui 内部时间系统)
             Event::NewEvents(_) => {
                 let now = Instant::now();
                 imgui.io_mut().update_delta_time(now - last_frame);
                 last_frame = now;
             }
+            // 主事件队列被清空 ==> 通知绘制 ui
             Event::MainEventsCleared => {
                 let gl_window = display.gl_window();
                 platform
@@ -87,8 +55,10 @@ impl System {
                     .expect("Failed to prepare frame");
                 gl_window.window().request_redraw();
             }
+            // 绘制 ui
             Event::RedrawRequested(_) => {
-                let ui = imgui.frame();
+                // 开启新的一帧
+                let ui = imgui.new_frame();
 
                 let mut run = true;
                 run_ui(&mut run, ui);
@@ -96,24 +66,55 @@ impl System {
                     *control_flow = ControlFlow::Exit;
                 }
 
-                let gl_window = display.gl_window();
                 let mut target = display.draw();
-                target.clear_color_srgb(1.0, 1.0, 1.0, 1.0);
-                platform.prepare_render(ui, gl_window.window());
-                let draw_data = imgui.render();
+                target.clear_color_srgb(1.0, 1.0, 1.0, 0.0);
+                platform.prepare_render(ui, display.gl_window().window());
                 renderer
-                    .render(&mut target, draw_data)
+                    .render(&mut target, imgui.render())
                     .expect("Rendering failed");
                 target.finish().expect("Failed to swap buffers");
             }
+            // 系统事件被发送到 winit
             Event::WindowEvent {
-                event: WindowEvent::CloseRequested,
-                ..
+                event: WindowEvent::CloseRequested, ..
             } => *control_flow = ControlFlow::Exit,
+            // 其他事件
             event => {
-                let gl_window = display.gl_window();
-                platform.handle_event(imgui.io_mut(), gl_window.window(), &event);
+                platform.handle_event(imgui.io_mut(), display.gl_window().window(), &event);
             }
         })
+    }
+}
+
+pub fn prepare_system(physical_xywh: BoundingBox) -> System {
+    // 事件循环
+    let event_loop = EventLoop::new();
+
+    // imgui 上下文
+    let mut imgui = Context::create();
+    imgui.set_ini_filename(None);
+
+    // winit 平台
+    let mut platform = WinitPlatform::init(&mut imgui);
+
+    // display 和 renderer
+    let (display, renderer) = create_screen_pair(
+        &mut imgui,
+        &event_loop,
+        physical_xywh,
+    );
+
+    platform.attach_window(
+        imgui.io_mut(),
+        display.gl_window().window(),
+        HiDpiMode::Locked(1.0),
+    );
+
+    System {
+        event_loop,
+        platform,
+        imgui,
+        display,
+        renderer,
     }
 }

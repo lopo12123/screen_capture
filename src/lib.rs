@@ -2,9 +2,10 @@
 extern crate napi_derive;
 
 mod screenshots_impl;
-mod screen_capture;
 mod declares;
-mod utils;
+mod imgui_impl;
+
+pub mod screen_capture;
 
 #[napi]
 pub fn package_name() -> String {
