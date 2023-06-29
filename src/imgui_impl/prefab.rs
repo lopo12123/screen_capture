@@ -1,10 +1,9 @@
 use glium::{Display, glutin};
-use glium::glutin::dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
-use glium::glutin::event_loop::{EventLoop, EventLoopWindowTarget};
+use glium::glutin::dpi::{PhysicalPosition, PhysicalSize};
+use glium::glutin::event_loop::{EventLoopWindowTarget};
 use glium::glutin::platform::windows::WindowBuilderExtWindows;
 use glium::glutin::window::WindowBuilder;
 use imgui_glium_renderer::Renderer;
-use crate::declares::CaptureInfo;
 
 const TITLE: &str = "截图";
 

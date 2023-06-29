@@ -1,19 +1,11 @@
-use glium::glutin;
-use glium::glutin::event::{DeviceEvent, Event, WindowEvent};
+use glium::glutin::event::{Event, WindowEvent};
 use glium::glutin::event_loop::{ControlFlow, EventLoop};
-use glium::glutin::window::WindowBuilder;
 use glium::{Display, Surface};
-use imgui::{Context, FontConfig, FontGlyphRanges, FontSource, Ui};
+use imgui::{Context, Ui};
 use imgui_glium_renderer::Renderer;
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
-use std::path::Path;
-use std::rc::Rc;
-use std::borrow::Borrow;
-use std::cell::RefCell;
-use std::ops::Deref;
 use std::time::Instant;
-use crate::declares::CaptureInfo;
-use crate::imgui_impl::prefab::{BoundingBox, create_screen_pair, ScreenPair};
+use crate::imgui_impl::prefab::{BoundingBox, create_screen_pair};
 
 pub struct System {
     // 主事件循环
@@ -107,7 +99,8 @@ pub fn prepare_system(physical_xywh: BoundingBox) -> System {
     platform.attach_window(
         imgui.io_mut(),
         display.gl_window().window(),
-        HiDpiMode::Locked(1.0),
+        HiDpiMode::Default,
+        // HiDpiMode::Locked(1.0),
     );
 
     System {

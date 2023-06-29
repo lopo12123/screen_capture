@@ -1,7 +1,4 @@
-use std::cell::RefCell;
 use std::cmp::{max, min};
-use std::rc::Rc;
-use glium::glutin::event_loop::EventLoop;
 use crate::declares::{CaptureInfo};
 use crate::imgui_impl::prefab::BoundingBox;
 
