@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate napi_derive;
+
 use std::env::{args};
 use std::fs::File;
 use std::io::Write;
@@ -7,7 +10,6 @@ use crate::imgui_impl::{launch_imgui_app};
 
 mod declares;
 mod utils;
-mod fltk_impl;
 mod screenshots_impl;
 
 pub mod screen_capture;
@@ -22,7 +24,13 @@ mod imgui_impl;
 /// screen_capture.exe --out=my-capture.png
 /// ```
 fn main() {
-    launch_imgui_app();
+    // launch_imgui_app();
+
+    for screen in ScreenCapture::capture() {
+        println!("{}", screen.scale_factor);
+        println!("{} x {}", screen.physical_x, screen.physical_y);
+        println!("{} x {}", screen.physical_width, screen.physical_height);
+    }
 
     // let mut filename = "capture.png".to_string();
     // for arg in args() {
@@ -66,7 +74,6 @@ mod unit_test {
     use fltk::surface::ImageSurface;
     use fltk::window::Window;
     use crate::screenshots_impl::ScreenshotsImpl;
-    use crate::utils::get_origin_wh;
 
     #[test]
     fn mini() {

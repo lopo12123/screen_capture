@@ -12,7 +12,7 @@ const TITLE: &str = "截图";
 /// - 无任务栏
 /// - 禁用改变大小
 /// - 指定尺寸+位置
-pub fn window_prefab(logical_xywh: (f64, f64, f64, f64)) -> WindowBuilder {
+pub fn create_window_prefab(logical_xywh: (f64, f64, f64, f64)) -> WindowBuilder {
     let (x, y, width, height) = logical_xywh;
     WindowBuilder::default()
         .with_title(String::from(TITLE))

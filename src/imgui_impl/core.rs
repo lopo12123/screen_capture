@@ -8,7 +8,7 @@ use imgui_glium_renderer::Renderer;
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
 use std::path::Path;
 use std::time::Instant;
-use crate::imgui_impl::prefab::window_prefab;
+use crate::imgui_impl::prefab::create_window_prefab;
 
 pub struct System {
     // 事件循环
@@ -29,7 +29,12 @@ pub fn init(logical_xywh: (f64, f64, f64, f64)) -> System {
 
     // 展示
     let display = Display::new(
-        window_prefab(logical_xywh),
+        create_window_prefab(logical_xywh),
+        glutin::ContextBuilder::new().with_vsync(true),
+        &event_loop,
+    ).expect("Failed to initialize display");
+    let display2 = Display::new(
+        create_window_prefab(logical_xywh),
         glutin::ContextBuilder::new().with_vsync(true),
         &event_loop,
     ).expect("Failed to initialize display");
@@ -39,10 +44,11 @@ pub fn init(logical_xywh: (f64, f64, f64, f64)) -> System {
 
     let mut platform = WinitPlatform::init(&mut imgui);
     {
-        let gl_window = display.gl_window();
-        let window = gl_window.window();
-
-        platform.attach_window(imgui.io_mut(), window, HiDpiMode::Default);
+        platform.attach_window(
+            imgui.io_mut(),
+            display.gl_window().window(),
+            HiDpiMode::Default
+        );
     }
 
     let renderer = Renderer::init(&mut imgui, &display).expect("Failed to initialize renderer");
