@@ -1,21 +1,15 @@
 #[macro_use]
 extern crate napi_derive;
 
-use crate::egui_impl::demo;
+use crate::screen_capture::ScreenCapture;
 
 mod declares;
 mod screenshots_impl;
 mod egui_impl;
+mod screen_capture;
 
 fn main() {
-    match demo() {
-        Ok(_) => {
-            println!("done");
-        }
-        Err(err) => {
-            println!("error: {:?}", err);
-        }
-    }
+    ScreenCapture::capture_with_crop();
 }
 
 #[cfg(test)]

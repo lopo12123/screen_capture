@@ -1,20 +1,8 @@
 use eframe::egui;
 use eframe::egui::ColorImage;
 
-pub fn demo() -> Result<(), eframe::Error> {
-    let options = eframe::NativeOptions {
-        initial_window_size: Some(egui::vec2(800.0, 600.0)),
-        ..Default::default()
-    };
-    eframe::run_native(
-        "My egui App",
-        options,
-        Box::new(|_cc| Box::<MyApp>::default()),
-    )
-}
-
 #[derive(Default)]
-struct MyApp {
+pub struct MyApp {
     continuously_take_screenshots: bool,
     texture: Option<egui::TextureHandle>,
     screenshot: Option<ColorImage>,
