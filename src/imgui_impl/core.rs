@@ -8,60 +8,42 @@ use imgui_glium_renderer::Renderer;
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
 use std::path::Path;
 use std::time::Instant;
-
-mod clipboard;
+use crate::imgui_impl::prefab::window_prefab;
 
 pub struct System {
+    // 事件循环
     pub event_loop: EventLoop<()>,
-    pub display: Display,
+    // imgui 上下文
     pub imgui: Context,
+    // winit 平台相关
     pub platform: WinitPlatform,
+    // glium Display
+    pub display: Display,
+    // gilum 渲染
     pub renderer: Renderer,
-    pub font_size: f32,
 }
 
-pub fn init() -> System {
+pub fn init(logical_xywh: (f64, f64, f64, f64)) -> System {
+    // 事件循环
     let event_loop = EventLoop::new();
-    let context = glutin::ContextBuilder::new().with_vsync(true);
-    let builder = WindowBuilder::new()
-        .with_title(String::from("截图"))
-        .with_inner_size(glutin::dpi::LogicalSize::new(1024f64, 768f64));
-    let display =
-        Display::new(builder, context, &event_loop).expect("Failed to initialize display");
+
+    // 展示
+    let display = Display::new(
+        window_prefab(logical_xywh),
+        glutin::ContextBuilder::new().with_vsync(true),
+        &event_loop,
+    ).expect("Failed to initialize display");
 
     let mut imgui = Context::create();
     imgui.set_ini_filename(None);
-
-    if let Some(backend) = clipboard::init() {
-        imgui.set_clipboard_backend(backend);
-    } else {
-        eprintln!("Failed to initialize clipboard");
-    }
 
     let mut platform = WinitPlatform::init(&mut imgui);
     {
         let gl_window = display.gl_window();
         let window = gl_window.window();
 
-        let dpi_mode = if let Ok(factor) = std::env::var("IMGUI_EXAMPLE_FORCE_DPI_FACTOR") {
-            // Allow forcing of HiDPI factor for debugging purposes
-            match factor.parse::<f64>() {
-                Ok(f) => HiDpiMode::Locked(f),
-                Err(e) => panic!("Invalid scaling factor: {}", e),
-            }
-        } else {
-            HiDpiMode::Default
-        };
-
-        platform.attach_window(imgui.io_mut(), window, dpi_mode);
+        platform.attach_window(imgui.io_mut(), window, HiDpiMode::Default);
     }
-
-    // Fixed font size. Note imgui_winit_support uses "logical
-    // pixels", which are physical pixels scaled by the devices
-    // scaling factor. Meaning, 13.0 pixels should look the same size
-    // on two different screens, and thus we do not need to scale this
-    // value (as the scaling is handled by winit)
-    let font_size = 13.0;
 
     let renderer = Renderer::init(&mut imgui, &display).expect("Failed to initialize renderer");
 
@@ -71,7 +53,6 @@ pub fn init() -> System {
         imgui,
         platform,
         renderer,
-        font_size,
     }
 }
 

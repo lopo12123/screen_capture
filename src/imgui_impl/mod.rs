@@ -1,10 +1,10 @@
 use imgui::*;
 
-pub mod support;
-
+mod core;
+mod prefab;
 
 pub fn launch_imgui_app() {
-    let system = support::init();
+    let system = core::init((2560_f64, 500_f64, 800_f64, 600_f64));
 
     system.main_loop(move |_, ui| {
         // If we don't explicitly create a window before creating some kind of widget, then Dear Imgui will automatically create one

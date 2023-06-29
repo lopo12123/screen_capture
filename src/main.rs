@@ -9,9 +9,9 @@ mod declares;
 mod utils;
 mod fltk_impl;
 mod screenshots_impl;
-mod imgui_impl;
 
 pub mod screen_capture;
+mod imgui_impl;
 
 /// # Examples
 ///
