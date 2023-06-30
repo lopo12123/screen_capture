@@ -1,12 +1,16 @@
+use std::borrow::Cow;
+use std::io::Cursor;
 use glium::glutin::event::{ElementState, Event, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
 use glium::glutin::event_loop::{ControlFlow, EventLoop};
-use glium::{Display, Surface};
-use imgui::{Context, ImColor32};
+use glium::{Display, Surface, Texture2d};
+use imgui::{Context, ImColor32, Textures};
 use imgui_glium_renderer::Renderer;
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
 use std::time::Instant;
 use glium::glutin::dpi::PhysicalPosition;
 use glium::glutin::platform::run_return::EventLoopExtRunReturn;
+use glium::texture::{ClientFormat, RawImage2d, Texture2dDataSink};
+use image::codecs::png::PngDecoder;
 use crate::imgui_impl::prefab::{BoundingBox, create_screen_pair};
 use crate::utils::clamp;
 
@@ -30,6 +34,14 @@ fn calc_constrained_point(physical_point: PhysicalPosition<f64>, bounding: Bound
         clamp(physical_point.x as i32, x, x + w) as f32,
         clamp(physical_point.y as i32, y, y + h) as f32,
     ]
+}
+
+/// 载入图像纹理
+fn load_screen_image(buffer: Vec<u8>, wh: (u32, u32)) {
+    let raw = RawImage2d::from_raw_rgba(buffer, wh);
+    raw.format;
+
+    // let t = Texture2dDataSink::from_raw(Cow::Owned(buffer), wh.0, wh.1);
 }
 
 pub struct System {
@@ -140,6 +152,7 @@ impl System {
 
                 // 绘制屏幕图像
                 // TODO
+                // renderer.textures().insert();
 
                 // region 交互绘制矩形
                 // 有起点 && (绘制中且有当前点 || 有终点)
@@ -151,15 +164,20 @@ impl System {
                         .position([x as f32, y as f32], imgui::Condition::Always)
                         .size([w as f32, h as f32], imgui::Condition::Always)
                         .title_bar(false)
+                        .resizable(false)
                         .draw_background(false)
                         .build(|| {
-                            ui.get_window_draw_list()
+                            let draw_list = ui.get_window_draw_list();
+
+                            draw_list
                                 .add_rect(
                                     start_point.unwrap(),
                                     rect_end.unwrap(),
                                     ImColor32::from_rgba(0x80, 0xc0, 0x40, 0xff),
                                 )
                                 .build();
+
+                            // draw_list.
                         });
                 }
                 // endregion

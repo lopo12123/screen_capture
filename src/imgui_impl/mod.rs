@@ -29,6 +29,6 @@ impl ImguiImpl {
         let system = core::System::new(ImguiImpl::calc_bounding(&captures));
         let exit_code = system.run();
 
-        println!("exit_code: {exit_code}");
+        println!("Task End. (exit_code: {exit_code})");
     }
 }
