@@ -9,6 +9,13 @@ mod egui_impl;
 mod screen_capture;
 
 fn main() {
+    // for screen in ScreenCapture::capture() {
+    //     let crate::declares::CaptureInfo {
+    //         scale_factor, physical_x, physical_y, physical_width, physical_height, ..
+    //     } = screen;
+    //     println!("xywh: {}, {}, {}, {}; sf: {}", physical_x, physical_y, physical_width, physical_height, scale_factor);
+    // }
+
     ScreenCapture::capture_with_crop();
 }
 

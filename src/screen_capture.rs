@@ -16,11 +16,12 @@ impl ScreenCapture {
     pub fn capture_with_crop() {
         let captures = ScreenshotsImpl::capture_all();
         for capture in &captures {
-            println!("{}x{}", capture.physical_width, capture.physical_height);
+            println!("{}, {}, {}, {}", capture.physical_x, capture.physical_y, capture.physical_width, capture.physical_height);
         }
 
         EguiImpl::bounding(captures);
+        // EguiImpl::bounding(vec![captures[1].clone()]);
 
-        println!("done!");
+        println!("Task End!");
     }
 }
