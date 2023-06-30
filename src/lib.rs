@@ -1,8 +1,9 @@
 #[macro_use]
 extern crate napi_derive;
 
-mod screenshots_impl;
 mod declares;
+mod utils;
+mod screenshots_impl;
 mod imgui_impl;
 
 pub mod screen_capture;

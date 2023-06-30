@@ -26,21 +26,8 @@ impl ImguiImpl {
 
     /// 传入图像信息开始交互式选择区域
     pub fn bounding(captures: Vec<CaptureInfo>) {
-        let system = core::prepare_system(ImguiImpl::calc_bounding(&captures));
-        let exit_code = system.main_loop(move |_, ui| {
-            // ui.window("My window via callback")
-            //     .position([10.0, 10.0], imgui::Condition::Always)
-            //     .size([1000.0, 1000.0], imgui::Condition::Always)
-            //     .build(|| {
-            //         ui.text("This content appears in a window");
-            //
-            //         // Everything in this callback appears in the window, like this button:
-            //         ui.button("This button");
-            //     });
-
-            // ui.window("鼠标位置")
-            //     .build(|| ui.text(format!("Some variable: {:?}", ui.io().mouse_pos)));
-        });
+        let system = core::System::new(ImguiImpl::calc_bounding(&captures));
+        let exit_code = system.run();
 
         println!("exit_code: {exit_code}");
     }

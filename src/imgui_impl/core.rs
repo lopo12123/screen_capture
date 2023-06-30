@@ -1,13 +1,14 @@
-use std::cmp::{max, min};
-use glium::glutin::event::{ElementState, Event, MouseButton, WindowEvent};
+use glium::glutin::event::{ElementState, Event, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
 use glium::glutin::event_loop::{ControlFlow, EventLoop};
 use glium::{Display, Surface};
-use imgui::{Context, ImColor32, Ui};
+use imgui::{Context, ImColor32};
 use imgui_glium_renderer::Renderer;
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
 use std::time::Instant;
+use glium::glutin::dpi::PhysicalPosition;
 use glium::glutin::platform::run_return::EventLoopExtRunReturn;
 use crate::imgui_impl::prefab::{BoundingBox, create_screen_pair};
+use crate::utils::clamp;
 
 fn calc_select_area(p1: [f32; 2], p2: [f32; 2]) -> [f32; 4] {
     let [x1, y1] = p1;
@@ -18,6 +19,16 @@ fn calc_select_area(p1: [f32; 2], p2: [f32; 2]) -> [f32; 4] {
         if y1 < y2 { y1 } else { y2 },
         if x1 > x2 { x1 } else { x2 },
         if y1 > y2 { x1 } else { x2 },
+    ]
+}
+
+/// 计算范围约束后的点位
+fn calc_constrained_point(physical_point: PhysicalPosition<f64>, bounding: BoundingBox) -> [f32; 2] {
+    let (x, y, w, h) = bounding;
+
+    [
+        clamp(physical_point.x as i32, x, x + w) as f32,
+        clamp(physical_point.y as i32, y, y + h) as f32,
     ]
 }
 
@@ -34,6 +45,7 @@ pub struct System {
     pub renderer: Renderer,
 
     // 点位坐标为 physical 坐标系
+    pub physical_xywh: BoundingBox,
     /// 是否正在绘制矩形
     pub is_drawing_rect: bool,
     /// 选择的区域 \[xl,yl, xh, yh\]
@@ -47,13 +59,54 @@ pub struct System {
 }
 
 impl System {
-    pub fn main_loop<F: FnMut(&mut bool, &mut Ui) + 'static>(self, mut run_ui: F) -> i32 {
+    pub fn new(physical_xywh: BoundingBox) -> System {
+        // 事件循环
+        let event_loop = EventLoop::new();
+
+        // imgui 上下文
+        let mut imgui = Context::create();
+        imgui.set_ini_filename(None);
+
+        // winit 平台
+        let mut platform = WinitPlatform::init(&mut imgui);
+
+        // display 和 renderer
+        let (display, renderer) = create_screen_pair(
+            &mut imgui,
+            &event_loop,
+            physical_xywh,
+        );
+
+        platform.attach_window(
+            imgui.io_mut(),
+            display.gl_window().window(),
+            HiDpiMode::Default,
+            // HiDpiMode::Locked(1.0),
+        );
+
+        System {
+            event_loop,
+            platform,
+            imgui,
+            display,
+            renderer,
+            physical_xywh,
+            is_drawing_rect: false,
+            select_area: None,
+            start_point: None,
+            end_point: None,
+            curr_point: None,
+        }
+    }
+
+    pub fn run(self) -> i32 {
         let System {
             mut event_loop,
             mut platform,
             mut imgui,
             display,
             mut renderer,
+            physical_xywh,
             mut is_drawing_rect,
             mut select_area,
             mut start_point,
@@ -64,13 +117,14 @@ impl System {
         let mut last_frame = Instant::now();
 
         event_loop.run_return(move |event, _, control_flow| match event {
-            // 和窗口事件相关的逻辑 (在此处更新 imgui 内部时间系统)
+            // region 和窗口事件相关的逻辑 (在此处更新 imgui 内部时间系统)
             Event::NewEvents(_) => {
                 let now = Instant::now();
                 imgui.io_mut().update_delta_time(now - last_frame);
                 last_frame = now;
             }
-            // 主事件队列被清空 ==> 通知绘制 ui
+            // endregion
+            // region 主事件队列被清空 ==> 通知绘制 ui
             Event::MainEventsCleared => {
                 let gl_window = display.gl_window();
                 platform
@@ -78,27 +132,26 @@ impl System {
                     .expect("Failed to prepare frame");
                 gl_window.window().request_redraw();
             }
-            // 绘制 ui
+            // endregion
+            // region 绘制 ui
             Event::RedrawRequested(_) => {
                 // 开启新的一帧
                 let ui = imgui.new_frame();
 
-                let mut run = true;
-                run_ui(&mut run, ui);
-                if !run {
-                    *control_flow = ControlFlow::Exit;
-                }
-
-                // 绘制背景
+                // 绘制屏幕图像
                 // TODO
 
-                // 有起点 + (绘制中且有当前) 或 有终点
+                // region 交互绘制矩形
+                // 有起点 && (绘制中且有当前点 || 有终点)
                 let rect_end = if is_drawing_rect { curr_point } else { end_point };
                 if start_point.is_some() && rect_end.is_some() {
-                    // TODO 透明窗口装填矩形选框
-                    ui.window("My window via callback")
-                        .position([10.0, 10.0], imgui::Condition::Always)
-                        .size([1000.0, 1000.0], imgui::Condition::Always)
+                    let (x, y, w, h) = physical_xywh;
+                    // 透明窗口装填矩形选框交互功能
+                    ui.window("bounding_mask")
+                        .position([x as f32, y as f32], imgui::Condition::Always)
+                        .size([w as f32, h as f32], imgui::Condition::Always)
+                        .title_bar(false)
+                        .draw_background(false)
                         .build(|| {
                             ui.get_window_draw_list()
                                 .add_rect(
@@ -109,6 +162,7 @@ impl System {
                                 .build();
                         });
                 }
+                // endregion
 
                 let mut target = display.draw();
                 target.clear_color_srgb(1.0, 1.0, 1.0, 0.0);
@@ -118,7 +172,8 @@ impl System {
                     .expect("Rendering failed");
                 target.finish().expect("Failed to swap buffers");
             }
-            // 处理鼠标按下和松开事件
+            // endregion
+            // region 处理鼠标按下和松开事件
             Event::WindowEvent {
                 event: WindowEvent::MouseInput { button: MouseButton::Left, state, .. }, ..
             } => {
@@ -134,60 +189,42 @@ impl System {
                     select_area = Some(calc_select_area(start_point.unwrap(), end_point.unwrap()));
                 }
             }
-            // 处理鼠标移动事件
+            // endregion
+            // region 处理鼠标移动事件
             Event::WindowEvent {
                 event: WindowEvent::CursorMoved { position, .. }, ..
             } => {
-                // FIXME: 处理边界问题
-                curr_point = Some([position.x as f32, position.y as f32])
+                // 更新当前点位, 处理边界问题
+                curr_point = Some(calc_constrained_point(position, physical_xywh))
             }
-            // 关闭窗口 (来自 winit)
+            // endregion
+            // region 处理按键事件: 'ESC'
+            Event::WindowEvent {
+                event: WindowEvent::KeyboardInput {
+                    input: KeyboardInput {
+                        state: ElementState::Pressed,
+                        virtual_keycode: Some(VirtualKeyCode::Escape),
+                        ..
+                    }, ..
+                }, ..
+            } => {
+                println!("Exit (cause 'ESC' was pressed)");
+                *control_flow = ControlFlow::Exit
+            }
+            // endregion
+            // region 关闭窗口
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested, ..
-            } => *control_flow = ControlFlow::Exit,
-            // 其他事件
+            } => {
+                println!("Exit (cause 'WindowEvent::CloseRequested' was sent)");
+                *control_flow = ControlFlow::Exit
+            }
+            // endregion
+            // region 其他事件
             event => {
                 platform.handle_event(imgui.io_mut(), display.gl_window().window(), &event);
             }
+            // endregion
         })
-    }
-}
-
-pub fn prepare_system(physical_xywh: BoundingBox) -> System {
-    // 事件循环
-    let event_loop = EventLoop::new();
-
-    // imgui 上下文
-    let mut imgui = Context::create();
-    imgui.set_ini_filename(None);
-
-    // winit 平台
-    let mut platform = WinitPlatform::init(&mut imgui);
-
-    // display 和 renderer
-    let (display, renderer) = create_screen_pair(
-        &mut imgui,
-        &event_loop,
-        physical_xywh,
-    );
-
-    platform.attach_window(
-        imgui.io_mut(),
-        display.gl_window().window(),
-        HiDpiMode::Default,
-        // HiDpiMode::Locked(1.0),
-    );
-
-    System {
-        event_loop,
-        platform,
-        imgui,
-        display,
-        renderer,
-        is_drawing_rect: false,
-        select_area: None,
-        start_point: None,
-        end_point: None,
-        curr_point: None,
     }
 }
