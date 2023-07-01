@@ -1,16 +1,20 @@
 use std::borrow::Cow;
 use std::io::Cursor;
+use std::rc::Rc;
 use glium::glutin::event::{ElementState, Event, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
 use glium::glutin::event_loop::{ControlFlow, EventLoop};
 use glium::{Display, Surface, Texture2d};
-use imgui::{Context, ImColor32, Textures};
-use imgui_glium_renderer::Renderer;
+use imgui::{Context, ImColor32, TextureId, Textures};
+use imgui_glium_renderer::{Renderer, Texture};
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
 use std::time::Instant;
+use glium::backend::Facade;
 use glium::glutin::dpi::PhysicalPosition;
 use glium::glutin::platform::run_return::EventLoopExtRunReturn;
 use glium::texture::{ClientFormat, RawImage2d, Texture2dDataSink};
+use glium::uniforms::SamplerBehavior;
 use image::codecs::png::PngDecoder;
+use crate::declares::CaptureInfo;
 use crate::imgui_impl::prefab::{BoundingBox, create_screen_pair};
 use crate::utils::clamp;
 
@@ -37,11 +41,38 @@ fn calc_constrained_point(physical_point: PhysicalPosition<f64>, bounding: Bound
 }
 
 /// 载入图像纹理
-fn load_screen_image(buffer: Vec<u8>, wh: (u32, u32)) {
-    let raw = RawImage2d::from_raw_rgba(buffer, wh);
-    raw.format;
+fn load_screen_images(
+    gl_ctx: &impl Facade,
+    renderer_textures: &mut Textures<Texture>,
+    screen_infos: Vec<CaptureInfo>,
+) -> Vec<(TextureId, i32, i32, u32, u32)> {
+    let mut texture_infos = vec![];
 
-    // let t = Texture2dDataSink::from_raw(Cow::Owned(buffer), wh.0, wh.1);
+    for screen_info in screen_infos {
+        let CaptureInfo {
+            physical_x, physical_y,
+            physical_width, physical_height,
+            rgba,
+            ..
+        } = screen_info;
+        let raw = RawImage2d::from_raw_rgba(rgba, (physical_width, physical_height));
+        let gl_texture = Texture2d::new(gl_ctx, raw).unwrap();
+        let texture = Texture {
+            texture: Rc::new(gl_texture),
+            sampler: SamplerBehavior::default(),
+        };
+        let texture_id = renderer_textures.insert(texture);
+        // FIXME: 验证 scale_factor 影响
+        texture_infos.push((
+            texture_id,
+            physical_x,
+            physical_y,
+            physical_width,
+            physical_height,
+        ));
+    }
+
+    texture_infos
 }
 
 pub struct System {
@@ -58,6 +89,8 @@ pub struct System {
 
     // 点位坐标为 physical 坐标系
     pub physical_xywh: BoundingBox,
+    /// 各屏幕的纹理id及位置信息
+    pub screen_texture_list: Vec<(TextureId, i32, i32, u32, u32)>,
     /// 是否正在绘制矩形
     pub is_drawing_rect: bool,
     /// 选择的区域 \[xl,yl, xh, yh\]
@@ -71,7 +104,7 @@ pub struct System {
 }
 
 impl System {
-    pub fn new(physical_xywh: BoundingBox) -> System {
+    pub fn new(physical_xywh: BoundingBox, captures: Vec<CaptureInfo>) -> System {
         // 事件循环
         let event_loop = EventLoop::new();
 
@@ -83,12 +116,20 @@ impl System {
         let mut platform = WinitPlatform::init(&mut imgui);
 
         // display 和 renderer
-        let (display, renderer) = create_screen_pair(
+        let (display, mut renderer) = create_screen_pair(
             &mut imgui,
             &event_loop,
             physical_xywh,
         );
 
+        // 计算获取各屏幕图像的 textureId + xywh
+        let screen_texture_list = load_screen_images(
+            display.get_context(),
+            renderer.textures(),
+            captures,
+        );
+
+        // 窗口附加到 winit
         platform.attach_window(
             imgui.io_mut(),
             display.gl_window().window(),
@@ -103,6 +144,7 @@ impl System {
             display,
             renderer,
             physical_xywh,
+            screen_texture_list,
             is_drawing_rect: false,
             select_area: None,
             start_point: None,
@@ -119,6 +161,7 @@ impl System {
             display,
             mut renderer,
             physical_xywh,
+            screen_texture_list,
             mut is_drawing_rect,
             mut select_area,
             mut start_point,
@@ -152,7 +195,11 @@ impl System {
 
                 // 绘制屏幕图像
                 // TODO
-                // renderer.textures().insert();
+                ui.image_button("test", screen_texture_list[0].0, [screen_texture_list[0].3 as f32, screen_texture_list[0].4 as f32]);
+                // let buffer: Vec<u8> = vec![];
+                // let gl_ctx = display.get_context();
+                // let raw = RawImage2d::from_raw_rgba(buffer, wh);
+                // let gl_texture = Texture2d::new(gl_ctx, raw).unwrap();
 
                 // region 交互绘制矩形
                 // 有起点 && (绘制中且有当前点 || 有终点)
