@@ -22,9 +22,10 @@ impl ScreenshotsImpl {
                                 scale_factor: scale_factor as f64,
                                 physical_x: x,
                                 physical_y: y,
-                                physical_width: image.width() as i32,
-                                physical_height: image.height() as i32,
+                                physical_width: image.width(),
+                                physical_height: image.height(),
                                 buffer: image.to_png().unwrap_or(vec![]),
+                                rgba: image.rgba().clone(),
                             });
                         }
                         Err(_) => {
