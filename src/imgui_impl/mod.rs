@@ -13,12 +13,10 @@ impl ImguiImpl {
         let (mut xl, mut yl, mut xh, mut yh) = (i32::MAX, i32::MAX, i32::MIN, i32::MIN);
 
         for capture in captures {
-            // println!("Screen To Bounding: xywh = ({}, {}, {}, {})", capture.physical_x, capture.physical_y, capture.physical_width, capture.physical_height);
-
             xl = min(xl, capture.physical_x);
             yl = min(yl, capture.physical_y);
-            xh = max(xh, capture.physical_x + capture.physical_width);
-            yh = max(yh, capture.physical_y + capture.physical_height);
+            xh = max(xh, capture.physical_x + capture.physical_width as i32);
+            yh = max(yh, capture.physical_y + capture.physical_height as i32);
         }
 
         (xl, yl, xh - xl, yh - yl)
@@ -26,7 +24,7 @@ impl ImguiImpl {
 
     /// 传入图像信息开始交互式选择区域
     pub fn bounding(captures: Vec<CaptureInfo>) {
-        let system = core::System::new(ImguiImpl::calc_bounding(&captures));
+        let system = core::System::new(ImguiImpl::calc_bounding(&captures), captures);
         let exit_code = system.run();
 
         println!("Task End. (exit_code: {exit_code})");
