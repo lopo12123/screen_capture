@@ -11,8 +11,8 @@ crate-type = ["cdylib"]
 
 [dependencies]
 # napi support
-napi = "2.11.2"
-napi-derive = "2.11.1"
+napi = "2.13.2"
+napi-derive = "2.13.0"
 
 # screenshot
 screenshots = { version = "0.6.0" }
