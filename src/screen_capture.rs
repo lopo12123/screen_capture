@@ -1,4 +1,4 @@
-use crate::declares::{CaptureInfo};
+use crate::declares::{CaptureInfo, SelectedImage};
 use crate::imgui_impl::ImguiImpl;
 use crate::screenshots_impl::ScreenshotsImpl;
 
@@ -13,9 +13,8 @@ impl ScreenCapture {
     }
 
     /// 截取所有屏幕并裁剪
-    pub fn capture_with_crop() {
+    pub fn capture_with_crop() -> Option<SelectedImage> {
         let captures = ScreenshotsImpl::capture_all();
-        ImguiImpl::bounding(captures);
-        // ImguiImpl::bounding(vec![captures[1].clone()]);
+        ImguiImpl::bounding(captures)
     }
 }

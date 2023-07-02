@@ -91,16 +91,16 @@ impl SelectedArea {
         } else {
             let [x1, y1, x2, y2] = self.p1p2.unwrap();
             let mut image_buf = ImageBuffer::new((x2 - x1) as u32, (y2 - y1) as u32);
+            //let mut image_buf = ImageBuffer::new(1920, 1080);
 
             for (x, y, pixel) in image_buf.enumerate_pixels_mut() {
                 let (r, g, b, a) = self.rgba[y as usize][x as usize];
-                *pixel = Rgba([r, g, b, a]);
+                *pixel = Rgba::from([r, g, b, a]);
             }
 
-            image_buf.save("./screen_capture.png");
-            // image_buf.as_raw();
-            // image::ImageBuffer::from_raw();
-            vec![]
+            // image_buf.save("./screen_capture.png");
+
+            image_buf.into_raw()
         }
     }
 }
