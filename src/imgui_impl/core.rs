@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::cell::RefCell;
 use std::io::Cursor;
 use std::rc::Rc;
 use glium::glutin::event::{ElementState, Event, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
@@ -14,8 +15,9 @@ use glium::glutin::platform::run_return::EventLoopExtRunReturn;
 use glium::texture::{ClientFormat, RawImage2d, Texture2dDataSink};
 use glium::uniforms::SamplerBehavior;
 use image::codecs::png::PngDecoder;
+use imgui::internal::RawCast;
 use crate::declares::CaptureInfo;
-use crate::imgui_impl::prefab::{BoundingBox, create_screen_pair};
+use crate::imgui_impl::prefab::{BoundingBox, create_screen_pair, SelectedArea};
 use crate::utils::clamp;
 
 /// 蒙层的颜色
@@ -112,8 +114,6 @@ pub struct System {
     pub screen_texture_list: Vec<(TextureId, i32, i32, u32, u32)>,
     /// 是否正在绘制矩形
     pub is_drawing_rect: bool,
-    /// 选择的区域 \[xl,yl, xh, yh\]
-    pub select_area: Option<[f32; 4]>,
     /// 绘制的起点
     start_point: Option<[f32; 2]>,
     /// 绘制的终点
@@ -165,7 +165,6 @@ impl System {
             physical_xywh,
             screen_texture_list,
             is_drawing_rect: false,
-            select_area: None,
             start_point: None,
             end_point: None,
             curr_point: None,
@@ -182,16 +181,22 @@ impl System {
             physical_xywh,
             screen_texture_list,
             mut is_drawing_rect,
-            mut select_area,
             mut start_point,
             mut end_point,
             mut curr_point,
         } = self;
-        let mut last_frame = Instant::now();
+        // 选择的区域 [xmin, ymin, xmax, ymax]
+        let target: Rc<RefCell<Option<[f32; 4]>>> = Rc::new(RefCell::new(None));
+
+        // 用于保存结果
+        // let select_area = target.clone();
+        let mut select_area = SelectedArea::new([0.0, 0.0, 0.0, 0.0], vec![]);
 
         // 设置窗口背景色黑色
         imgui.style_mut().colors[StyleColor::WindowBg as usize] = [0.0, 0.0, 0.0, 1.0];
 
+        // 用于帧同步
+        let mut last_frame = Instant::now();
         let exit_code = event_loop.run_return(move |event, _, control_flow| match event {
             // region 和窗口事件相关的逻辑 (在此处更新 imgui 内部时间系统)
             Event::NewEvents(_) => {
@@ -227,8 +232,18 @@ impl System {
                         let draw_list = ui.get_window_draw_list();
 
                         // TODO: 绘制所有屏幕图像
-                        let (tid, sx, sy, sw, sh) = screen_texture_list[0].clone();
+                        // for screen_texture in screen_texture_list {
+                        //     let (tid, sx, sy, sw, sh) = screen_texture;
+                        //     draw_list
+                        //         .add_image(
+                        //             tid,
+                        //             [sx as f32, sy as f32],
+                        //             [sx as f32 + sw as f32, sy as f32 + sh as f32],
+                        //         )
+                        //         .build();
+                        // }
 
+                        let (tid, sx, sy, sw, sh) = screen_texture_list[0].clone();
                         draw_list
                             .add_image(
                                 tid,
@@ -271,13 +286,39 @@ impl System {
                     });
                 // endregion
 
-                let mut target = display.draw();
-                target.clear_color_srgb(1.0, 1.0, 1.0, 0.0);
+                let mut frame = display.draw();
+                frame.clear_color_srgb(1.0, 1.0, 1.0, 0.0);
                 platform.prepare_render(ui, display.gl_window().window());
                 renderer
-                    .render(&mut target, imgui.render())
+                    .render(&mut frame, imgui.render())
                     .expect("Rendering failed");
-                target.finish().expect("Failed to swap buffers");
+                frame.finish().expect("Failed to swap buffers");
+
+                // 缓存捕获的区域
+                if start_point.is_some() && end_point.is_some() {
+                    let p1p2 = calc_select_area(start_point.unwrap(), end_point.unwrap());
+
+                    // 更新目标区域
+                    if !select_area.check(p1p2) {
+                        let [x1, y1, x2, y2] = p1p2;
+                        // 获取屏幕帧的 rgba 阵列
+                        let frame_pixels: Vec<Vec<(u8, u8, u8, u8)>> = display.read_front_buffer().unwrap();
+                        // 选中区域的 rgba 阵列
+                        let mut selected_pixels: Vec<Vec<(u8, u8, u8, u8)>> = vec![];
+                        for y in (y1 as usize)..(y2 as usize) {
+                            let mut row = vec![(0u8, 0u8, 0u8, 0u8); (x2 as usize) - (x1 as usize)];
+                            row.clone_from_slice(&frame_pixels[y][(x1 as usize)..(x2 as usize)]);
+                            selected_pixels.push(row);
+                        }
+
+                        let y = selected_pixels.len();
+                        let x = selected_pixels[0].len();
+
+                        select_area = SelectedArea::new(p1p2, selected_pixels);
+
+                        println!("Update Capture! p1p2: {:?}; buffer: {} x {} x 4", p1p2, x, y);
+                    }
+                }
             }
             // endregion
             // region 处理鼠标按下和松开事件
@@ -293,8 +334,7 @@ impl System {
                     // 释放: 设置 flag -> 设置终点 -> 计算区域
                     is_drawing_rect = false;
                     end_point = curr_point;
-                    select_area = Some(calc_select_area(start_point.unwrap(), end_point.unwrap()));
-                    println!("ok! {:?}", select_area);
+                    // *select_area.borrow_mut() = Some(calc_select_area(start_point.unwrap(), end_point.unwrap()));
                 }
             }
             // endregion
@@ -350,7 +390,7 @@ impl System {
             // endregion
         });
 
-        // TODO: select_area 被 move, 改用 Rc
-        (exit_code, select_area)
+        let v = (exit_code, *target.borrow());
+        v
     }
 }

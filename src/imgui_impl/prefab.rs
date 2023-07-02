@@ -47,3 +47,34 @@ pub fn create_screen_pair(
 
     (display, renderer)
 }
+
+
+/// 交互式选择选中的区域
+pub struct SelectedArea {
+    /// 即: \[xmin, ymin, xmax, ymax\]
+    pub p1p2: [f32; 4],
+    /// 目标区域的 rgba 阵列
+    pub rgba: Vec<Vec<(u8, u8, u8, u8)>>,
+}
+
+impl SelectedArea {
+    pub fn new(p1p2: [f32; 4], rgba: Vec<Vec<(u8, u8, u8, u8)>>) -> SelectedArea {
+        SelectedArea { p1p2, rgba }
+    }
+
+    /// 检查是否是同一区域 (同一区域则不再执行捕获)
+    pub fn check(&self, other_p1p2: [f32; 4]) -> bool {
+        self.p1p2 == other_p1p2
+    }
+}
+
+#[cfg(test)]
+mod unit_test {
+    #[test]
+    fn tt() {
+        let a = vec![1, 2, 3, 4];
+        let b = vec![1, 2, 3, 4];
+
+        println!("equal: {}", a == b);
+    }
+}
