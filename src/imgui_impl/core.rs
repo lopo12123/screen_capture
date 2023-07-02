@@ -18,17 +18,8 @@ use crate::declares::CaptureInfo;
 use crate::imgui_impl::prefab::{BoundingBox, create_screen_pair};
 use crate::utils::clamp;
 
-fn calc_select_area(p1: [f32; 2], p2: [f32; 2]) -> [f32; 4] {
-    let [x1, y1] = p1;
-    let [x2, y2] = p2;
-
-    [
-        if x1 < x2 { x1 } else { x2 },
-        if y1 < y2 { y1 } else { y2 },
-        if x1 > x2 { x1 } else { x2 },
-        if y1 > y2 { x1 } else { x2 },
-    ]
-}
+/// 蒙层的颜色
+const MASK_COLOR: ImColor32 = ImColor32::from_rgba(0x00, 0x00, 0x00, 0x66);
 
 /// 计算范围约束后的点位
 fn calc_constrained_point(physical_point: PhysicalPosition<f64>, bounding: BoundingBox) -> [f32; 2] {
@@ -38,6 +29,34 @@ fn calc_constrained_point(physical_point: PhysicalPosition<f64>, bounding: Bound
         clamp(physical_point.x as i32, x, x + w) as f32,
         clamp(physical_point.y as i32, y, y + h) as f32,
     ]
+}
+
+/// 给定任意两点计算其包围的矩形的 '左上点' 和 '右下点',
+/// 即: \[xmin, ymin, xmax, ymax\]
+fn calc_select_area(p1: [f32; 2], p2: [f32; 2]) -> [f32; 4] {
+    let [x1, y1] = p1;
+    let [x2, y2] = p2;
+
+    [
+        if x1 < x2 { x1 } else { x2 },
+        if y1 < y2 { y1 } else { y2 },
+        if x1 > x2 { x1 } else { x2 },
+        if y1 > y2 { y1 } else { y2 },
+    ]
+}
+
+/// 给定大矩形(Rect1)宽高(wh)和小矩形(Rect2)任意两点(p1, p2),
+/// 返回 'Rect2 - Rect1' 区域的四个矩形的 '左上点' 和 '右下点'
+fn calc_bounding_rect(wh: [f32; 2], p1: [f32; 2], p2: [f32; 2]) -> [[[f32; 2]; 2]; 4] {
+    let [w, h] = wh;
+    let [x1, y1, x2, y2] = calc_select_area(p1, p2);
+
+    return [
+        [[0.0, 0.0], [x1, y2]],
+        [[x1, 0.0], [w, y1]],
+        [[0.0, y2], [x2, h]],
+        [[x2, y1], [w, h]],
+    ];
 }
 
 /// 载入图像纹理
@@ -206,6 +225,8 @@ impl System {
                     // .draw_background(false)
                     .build(|| {
                         let draw_list = ui.get_window_draw_list();
+
+                        // TODO: 绘制所有屏幕图像
                         let (tid, sx, sy, sw, sh) = screen_texture_list[0].clone();
 
                         draw_list
@@ -219,50 +240,35 @@ impl System {
                 // endregion
 
                 // region 交互绘制矩形
-                // 有起点 && (绘制中且有当前点 || 有终点)
+                // 终点: 绘制中(当前点) / 绘制结束(结束点)
                 let rect_end = if is_drawing_rect { curr_point } else { end_point };
-                if start_point.is_some() && rect_end.is_some() {
-                    // 透明窗口装填矩形选框交互功能
-                    ui.window("bounding_mask")
-                        .position([x as f32, y as f32], imgui::Condition::Always)
-                        .size([w as f32, h as f32], imgui::Condition::Always)
-                        .title_bar(false)
-                        .resizable(false)
-                        .draw_background(false)
-                        .build(|| {
-                            let draw_list = ui.get_window_draw_list();
+                // 透明窗口装填矩形选框交互功能
+                ui.window("bounding_mask")
+                    .position([x as f32, y as f32], imgui::Condition::Always)
+                    .size([w as f32, h as f32], imgui::Condition::Always)
+                    .title_bar(false)
+                    .resizable(false)
+                    .draw_background(false)
+                    .build(|| {
+                        let draw_list = ui.get_window_draw_list();
 
+                        // 有选区: 绘制选区外蒙层
+                        if start_point.is_some() && rect_end.is_some() {
+                            for rect in calc_bounding_rect([w as f32, h as f32], start_point.unwrap(), rect_end.unwrap()) {
+                                draw_list
+                                    .add_rect(rect[0], rect[1], MASK_COLOR)
+                                    .filled(true)
+                                    .build();
+                            }
+                        }
+                        // 无选区: 绘制全屏蒙层
+                        else {
                             draw_list
-                                .add_rect(
-                                    start_point.unwrap(),
-                                    rect_end.unwrap(),
-                                    ImColor32::from_rgba(0x80, 0xc0, 0x40, 0x33),
-                                )
+                                .add_rect([0.0, 0.0], [w as f32, h as f32], MASK_COLOR)
                                 .filled(true)
                                 .build();
-
-                            // draw_list
-                            //     .with_clip_rect_intersect([100.0, 100.0], [300.0, 300.0], || {
-                            //         // 在剪裁区域内绘制的内容
-                            //         let rect_min = [150.0, 150.0];
-                            //         let rect_max = [250.0, 250.0];
-                            //         let color = [1.0, 0.0, 0.0, 1.0];
-                            //         draw_list
-                            //             .add_rect(rect_min, rect_max, color)
-                            //             .filled(true)
-                            //             .build();
-                            //
-                            //         // 在内部绘制一个被裁减的矩形
-                            //         let inner_rect_min = [180.0, 180.0];
-                            //         let inner_rect_max = [220.0, 220.0];
-                            //         let inner_color = [0.0, 1.0, 0.0, 0.0];
-                            //         draw_list
-                            //             .add_rect(inner_rect_min, inner_rect_max, inner_color)
-                            //             .filled(true)
-                            //             .build();
-                            //     });
-                        });
-                }
+                        }
+                    });
                 // endregion
 
                 let mut target = display.draw();
