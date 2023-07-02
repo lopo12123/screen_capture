@@ -4,7 +4,7 @@ use std::rc::Rc;
 use glium::glutin::event::{ElementState, Event, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
 use glium::glutin::event_loop::{ControlFlow, EventLoop};
 use glium::{Display, Surface, Texture2d};
-use imgui::{Context, ImColor32, TextureId, Textures};
+use imgui::{Context, ImColor32, StyleColor, TextureId, Textures};
 use imgui_glium_renderer::{Renderer, Texture};
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
 use std::time::Instant;
@@ -168,8 +168,10 @@ impl System {
             mut end_point,
             mut curr_point,
         } = self;
-
         let mut last_frame = Instant::now();
+
+        // 设置窗口背景色黑色
+        imgui.style_mut().colors[StyleColor::WindowBg as usize] = [0.0, 0.0, 0.0, 1.0];
 
         event_loop.run_return(move |event, _, control_flow| match event {
             // region 和窗口事件相关的逻辑 (在此处更新 imgui 内部时间系统)
@@ -192,20 +194,34 @@ impl System {
             Event::RedrawRequested(_) => {
                 // 开启新的一帧
                 let ui = imgui.new_frame();
+                let (x, y, w, h) = physical_xywh;
 
-                // 绘制屏幕图像
-                // TODO
-                ui.image_button("test", screen_texture_list[0].0, [screen_texture_list[0].3 as f32, screen_texture_list[0].4 as f32]);
-                // let buffer: Vec<u8> = vec![];
-                // let gl_ctx = display.get_context();
-                // let raw = RawImage2d::from_raw_rgba(buffer, wh);
-                // let gl_texture = Texture2d::new(gl_ctx, raw).unwrap();
+                // region 绘制屏幕图像
+                // 在目标位置绘制各屏幕图像
+                ui.window("screen_images")
+                    .position([x as f32, y as f32], imgui::Condition::Always)
+                    .size([w as f32, h as f32], imgui::Condition::Always)
+                    .title_bar(false)
+                    .resizable(false)
+                    // .draw_background(false)
+                    .build(|| {
+                        let draw_list = ui.get_window_draw_list();
+                        let (tid, sx, sy, sw, sh) = screen_texture_list[0].clone();
+
+                        draw_list
+                            .add_image(
+                                tid,
+                                [sx as f32, sy as f32],
+                                [sx as f32 + sw as f32, sy as f32 + sh as f32],
+                            )
+                            .build();
+                    });
+                // endregion
 
                 // region 交互绘制矩形
                 // 有起点 && (绘制中且有当前点 || 有终点)
                 let rect_end = if is_drawing_rect { curr_point } else { end_point };
                 if start_point.is_some() && rect_end.is_some() {
-                    let (x, y, w, h) = physical_xywh;
                     // 透明窗口装填矩形选框交互功能
                     ui.window("bounding_mask")
                         .position([x as f32, y as f32], imgui::Condition::Always)
@@ -220,11 +236,31 @@ impl System {
                                 .add_rect(
                                     start_point.unwrap(),
                                     rect_end.unwrap(),
-                                    ImColor32::from_rgba(0x80, 0xc0, 0x40, 0xff),
+                                    ImColor32::from_rgba(0x80, 0xc0, 0x40, 0x33),
                                 )
+                                .filled(true)
                                 .build();
 
-                            // draw_list.
+                            // draw_list
+                            //     .with_clip_rect_intersect([100.0, 100.0], [300.0, 300.0], || {
+                            //         // 在剪裁区域内绘制的内容
+                            //         let rect_min = [150.0, 150.0];
+                            //         let rect_max = [250.0, 250.0];
+                            //         let color = [1.0, 0.0, 0.0, 1.0];
+                            //         draw_list
+                            //             .add_rect(rect_min, rect_max, color)
+                            //             .filled(true)
+                            //             .build();
+                            //
+                            //         // 在内部绘制一个被裁减的矩形
+                            //         let inner_rect_min = [180.0, 180.0];
+                            //         let inner_rect_max = [220.0, 220.0];
+                            //         let inner_color = [0.0, 1.0, 0.0, 0.0];
+                            //         draw_list
+                            //             .add_rect(inner_rect_min, inner_rect_max, inner_color)
+                            //             .filled(true)
+                            //             .build();
+                            //     });
                         });
                 }
                 // endregion
@@ -274,6 +310,21 @@ impl System {
                 }, ..
             } => {
                 println!("Exit (cause 'ESC' was pressed)");
+                *control_flow = ControlFlow::Exit
+            }
+            // endregion
+            // region 处理按键事件: 'Enter'
+            Event::WindowEvent {
+                event: WindowEvent::KeyboardInput {
+                    input: KeyboardInput {
+                        state: ElementState::Pressed,
+                        virtual_keycode: Some(VirtualKeyCode::Return),
+                        ..
+                    }, ..
+                }, ..
+            } => {
+                println!("Exit (cause 'Enter' was pressed)");
+                // TODO: handle confirm
                 *control_flow = ControlFlow::Exit
             }
             // endregion
