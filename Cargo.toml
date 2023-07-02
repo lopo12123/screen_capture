@@ -14,14 +14,11 @@ crate-type = ["cdylib"]
 napi = "2.11.2"
 napi-derive = "2.11.1"
 
-# clipboard
-copypasta = "0.8.2"
-
 # screenshot
 screenshots = { version = "0.6.0" }
 
 # gui: fltk
-fltk = { version = "1.4.5", features = ["no-pango", "no-images"] }
+#fltk = { version = "1.4.5", features = ["no-pango", "no-images"] }
 
 # gui: egui, 不支持多窗口 ('eframe' is a framework, 'egui' is a library)
 #eframe = "0.22.0"
