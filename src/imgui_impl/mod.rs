@@ -25,8 +25,8 @@ impl ImguiImpl {
     /// 传入图像信息开始交互式选择区域
     pub fn bounding(captures: Vec<CaptureInfo>) {
         let system = core::System::new(ImguiImpl::calc_bounding(&captures), captures);
-        let exit_code = system.run();
+        let (exit_code, select_area) = system.run();
 
-        println!("Task End. (exit_code: {exit_code})");
+        println!("Task End. (exit_code: {exit_code}, select_area: {select_area:?})");
     }
 }

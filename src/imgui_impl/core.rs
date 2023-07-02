@@ -172,7 +172,7 @@ impl System {
         }
     }
 
-    pub fn run(self) -> i32 {
+    pub fn run(self) -> (i32, Option<[f32; 4]>) {
         let System {
             mut event_loop,
             mut platform,
@@ -192,7 +192,7 @@ impl System {
         // 设置窗口背景色黑色
         imgui.style_mut().colors[StyleColor::WindowBg as usize] = [0.0, 0.0, 0.0, 1.0];
 
-        event_loop.run_return(move |event, _, control_flow| match event {
+        let exit_code = event_loop.run_return(move |event, _, control_flow| match event {
             // region 和窗口事件相关的逻辑 (在此处更新 imgui 内部时间系统)
             Event::NewEvents(_) => {
                 let now = Instant::now();
@@ -294,6 +294,7 @@ impl System {
                     is_drawing_rect = false;
                     end_point = curr_point;
                     select_area = Some(calc_select_area(start_point.unwrap(), end_point.unwrap()));
+                    println!("ok! {:?}", select_area);
                 }
             }
             // endregion
@@ -347,6 +348,9 @@ impl System {
                 platform.handle_event(imgui.io_mut(), display.gl_window().window(), &event);
             }
             // endregion
-        })
+        });
+
+        // TODO: select_area 被 move, 改用 Rc
+        (exit_code, select_area)
     }
 }
