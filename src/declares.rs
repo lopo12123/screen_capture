@@ -19,3 +19,14 @@ pub struct CaptureInfo {
     // 原始 rgba 阵列 (用于创建纹理)
     pub rgba: Vec<u8>,
 }
+
+/// 选中的区域
+#[derive(Debug, Clone)]
+#[napi(object)]
+pub struct SelectedImage {
+    /// \[xmin, ymin, xmax, ymax\]
+    #[napi(ts_type = "[xmin: number, ymin: number, xmax: number, ymax: number]")]
+    pub p1p2: Vec<f64>,
+    // 图片的 buffer (可直接使用)
+    pub buffer: Vec<u8>,
+}

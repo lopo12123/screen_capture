@@ -171,7 +171,7 @@ impl System {
         }
     }
 
-    pub fn run(self) -> (i32, Option<[f32; 4]>) {
+    pub fn run(self) -> (i32, SelectedArea) {
         let System {
             mut event_loop,
             mut platform,
@@ -185,212 +185,214 @@ impl System {
             mut end_point,
             mut curr_point,
         } = self;
-        // 选择的区域 [xmin, ymin, xmax, ymax]
-        let target: Rc<RefCell<Option<[f32; 4]>>> = Rc::new(RefCell::new(None));
-
-        // 用于保存结果
-        // let select_area = target.clone();
-        let mut select_area = SelectedArea::new([0.0, 0.0, 0.0, 0.0], vec![]);
+        // 存储选择结果
+        let result: Rc<RefCell<SelectedArea>> = Rc::new(RefCell::new(SelectedArea::empty()));
 
         // 设置窗口背景色黑色
         imgui.style_mut().colors[StyleColor::WindowBg as usize] = [0.0, 0.0, 0.0, 1.0];
 
-        // 用于帧同步
-        let mut last_frame = Instant::now();
-        let exit_code = event_loop.run_return(move |event, _, control_flow| match event {
-            // region 和窗口事件相关的逻辑 (在此处更新 imgui 内部时间系统)
-            Event::NewEvents(_) => {
-                let now = Instant::now();
-                imgui.io_mut().update_delta_time(now - last_frame);
-                last_frame = now;
-            }
-            // endregion
-            // region 主事件队列被清空 ==> 通知绘制 ui
-            Event::MainEventsCleared => {
-                let gl_window = display.gl_window();
-                platform
-                    .prepare_frame(imgui.io_mut(), gl_window.window())
-                    .expect("Failed to prepare frame");
-                gl_window.window().request_redraw();
-            }
-            // endregion
-            // region 绘制 ui
-            Event::RedrawRequested(_) => {
-                // 开启新的一帧
-                let ui = imgui.new_frame();
-                let (x, y, w, h) = physical_xywh;
+        let exit_code = event_loop.run_return({
+            // 用于帧同步
+            let mut last_frame = Instant::now();
 
-                // region 绘制屏幕图像
-                // 在目标位置绘制各屏幕图像
-                ui.window("screen_images")
-                    .position([x as f32, y as f32], imgui::Condition::Always)
-                    .size([w as f32, h as f32], imgui::Condition::Always)
-                    .title_bar(false)
-                    .resizable(false)
-                    // .draw_background(false)
-                    .build(|| {
-                        let draw_list = ui.get_window_draw_list();
+            // 用于保存结果
+            let mut select_area = result.clone();
 
-                        // TODO: 绘制所有屏幕图像
-                        // for screen_texture in screen_texture_list {
-                        //     let (tid, sx, sy, sw, sh) = screen_texture;
-                        //     draw_list
-                        //         .add_image(
-                        //             tid,
-                        //             [sx as f32, sy as f32],
-                        //             [sx as f32 + sw as f32, sy as f32 + sh as f32],
-                        //         )
-                        //         .build();
-                        // }
-
-                        let (tid, sx, sy, sw, sh) = screen_texture_list[0].clone();
-                        draw_list
-                            .add_image(
-                                tid,
-                                [sx as f32, sy as f32],
-                                [sx as f32 + sw as f32, sy as f32 + sh as f32],
-                            )
-                            .build();
-                    });
+            move |event, _, control_flow| match event {
+                // region 和窗口事件相关的逻辑 (在此处更新 imgui 内部时间系统)
+                Event::NewEvents(_) => {
+                    let now = Instant::now();
+                    imgui.io_mut().update_delta_time(now - last_frame);
+                    last_frame = now;
+                }
                 // endregion
+                // region 主事件队列被清空 ==> 通知绘制 ui
+                Event::MainEventsCleared => {
+                    let gl_window = display.gl_window();
+                    platform
+                        .prepare_frame(imgui.io_mut(), gl_window.window())
+                        .expect("Failed to prepare frame");
+                    gl_window.window().request_redraw();
+                }
+                // endregion
+                // region 绘制 ui
+                Event::RedrawRequested(_) => {
+                    // 开启新的一帧
+                    let ui = imgui.new_frame();
+                    let (x, y, w, h) = physical_xywh;
 
-                // region 交互绘制矩形
-                // 终点: 绘制中(当前点) / 绘制结束(结束点)
-                let rect_end = if is_drawing_rect { curr_point } else { end_point };
-                // 透明窗口装填矩形选框交互功能
-                ui.window("bounding_mask")
-                    .position([x as f32, y as f32], imgui::Condition::Always)
-                    .size([w as f32, h as f32], imgui::Condition::Always)
-                    .title_bar(false)
-                    .resizable(false)
-                    .draw_background(false)
-                    .build(|| {
-                        let draw_list = ui.get_window_draw_list();
+                    // region 绘制屏幕图像
+                    // 在目标位置绘制各屏幕图像
+                    ui.window("screen_images")
+                        .position([x as f32, y as f32], imgui::Condition::Always)
+                        .size([w as f32, h as f32], imgui::Condition::Always)
+                        .title_bar(false)
+                        .resizable(false)
+                        // .draw_background(false)
+                        .build(|| {
+                            let draw_list = ui.get_window_draw_list();
 
-                        // 有选区: 绘制选区外蒙层
-                        if start_point.is_some() && rect_end.is_some() {
-                            for rect in calc_bounding_rect([w as f32, h as f32], start_point.unwrap(), rect_end.unwrap()) {
+                            // TODO: 绘制所有屏幕图像
+                            // for screen_texture in screen_texture_list {
+                            //     let (tid, sx, sy, sw, sh) = screen_texture;
+                            //     draw_list
+                            //         .add_image(
+                            //             tid,
+                            //             [sx as f32, sy as f32],
+                            //             [sx as f32 + sw as f32, sy as f32 + sh as f32],
+                            //         )
+                            //         .build();
+                            // }
+
+                            let (tid, sx, sy, sw, sh) = screen_texture_list[0].clone();
+                            draw_list
+                                .add_image(
+                                    tid,
+                                    [sx as f32, sy as f32],
+                                    [sx as f32 + sw as f32, sy as f32 + sh as f32],
+                                )
+                                .build();
+                        });
+                    // endregion
+
+                    // region 交互绘制矩形
+                    // 终点: 绘制中(当前点) / 绘制结束(结束点)
+                    let rect_end = if is_drawing_rect { curr_point } else { end_point };
+                    // 透明窗口装填矩形选框交互功能
+                    ui.window("bounding_mask")
+                        .position([x as f32, y as f32], imgui::Condition::Always)
+                        .size([w as f32, h as f32], imgui::Condition::Always)
+                        .title_bar(false)
+                        .resizable(false)
+                        .draw_background(false)
+                        .build(|| {
+                            let draw_list = ui.get_window_draw_list();
+
+                            // 有选区: 绘制选区外蒙层
+                            if start_point.is_some() && rect_end.is_some() {
+                                for rect in calc_bounding_rect([w as f32, h as f32], start_point.unwrap(), rect_end.unwrap()) {
+                                    draw_list
+                                        .add_rect(rect[0], rect[1], MASK_COLOR)
+                                        .filled(true)
+                                        .build();
+                                }
+                            }
+                            // 无选区: 绘制全屏蒙层
+                            else {
                                 draw_list
-                                    .add_rect(rect[0], rect[1], MASK_COLOR)
+                                    .add_rect([0.0, 0.0], [w as f32, h as f32], MASK_COLOR)
                                     .filled(true)
                                     .build();
                             }
+                        });
+                    // endregion
+
+                    let mut frame = display.draw();
+                    frame.clear_color_srgb(1.0, 1.0, 1.0, 0.0);
+                    platform.prepare_render(ui, display.gl_window().window());
+                    renderer
+                        .render(&mut frame, imgui.render())
+                        .expect("Rendering failed");
+                    frame.finish().expect("Failed to swap buffers");
+
+                    // 缓存捕获的区域
+                    if start_point.is_some() && end_point.is_some() {
+                        let p1p2 = calc_select_area(start_point.unwrap(), end_point.unwrap());
+
+                        // 更新目标区域
+                        if select_area.borrow().check(p1p2) {
+                            let [x1, y1, x2, y2] = p1p2;
+                            // 获取屏幕帧的 rgba 阵列
+                            let frame_pixels: Vec<Vec<(u8, u8, u8, u8)>> = display.read_front_buffer().unwrap();
+                            // 选中区域的 rgba 阵列
+                            let mut selected_pixels: Vec<Vec<(u8, u8, u8, u8)>> = vec![];
+                            for y in (y1 as usize)..(y2 as usize) {
+                                let mut row = vec![(0u8, 0u8, 0u8, 0u8); (x2 as usize) - (x1 as usize)];
+                                row.clone_from_slice(&frame_pixels[y][(x1 as usize)..(x2 as usize)]);
+                                selected_pixels.push(row);
+                            }
+
+                            let y = selected_pixels.len();
+                            let x = selected_pixels[0].len();
+
+                            // 更新结果
+                            select_area.borrow_mut().update(p1p2, selected_pixels);
+
+                            println!("Update Capture! p1p2: {:?}; buffer: {} x {} x 4", p1p2, x, y);
                         }
-                        // 无选区: 绘制全屏蒙层
-                        else {
-                            draw_list
-                                .add_rect([0.0, 0.0], [w as f32, h as f32], MASK_COLOR)
-                                .filled(true)
-                                .build();
-                        }
-                    });
-                // endregion
-
-                let mut frame = display.draw();
-                frame.clear_color_srgb(1.0, 1.0, 1.0, 0.0);
-                platform.prepare_render(ui, display.gl_window().window());
-                renderer
-                    .render(&mut frame, imgui.render())
-                    .expect("Rendering failed");
-                frame.finish().expect("Failed to swap buffers");
-
-                // 缓存捕获的区域
-                if start_point.is_some() && end_point.is_some() {
-                    let p1p2 = calc_select_area(start_point.unwrap(), end_point.unwrap());
-
-                    // 更新目标区域
-                    if !select_area.check(p1p2) {
-                        let [x1, y1, x2, y2] = p1p2;
-                        // 获取屏幕帧的 rgba 阵列
-                        let frame_pixels: Vec<Vec<(u8, u8, u8, u8)>> = display.read_front_buffer().unwrap();
-                        // 选中区域的 rgba 阵列
-                        let mut selected_pixels: Vec<Vec<(u8, u8, u8, u8)>> = vec![];
-                        for y in (y1 as usize)..(y2 as usize) {
-                            let mut row = vec![(0u8, 0u8, 0u8, 0u8); (x2 as usize) - (x1 as usize)];
-                            row.clone_from_slice(&frame_pixels[y][(x1 as usize)..(x2 as usize)]);
-                            selected_pixels.push(row);
-                        }
-
-                        let y = selected_pixels.len();
-                        let x = selected_pixels[0].len();
-
-                        select_area = SelectedArea::new(p1p2, selected_pixels);
-
-                        println!("Update Capture! p1p2: {:?}; buffer: {} x {} x 4", p1p2, x, y);
                     }
                 }
-            }
-            // endregion
-            // region 处理鼠标按下和松开事件
-            Event::WindowEvent {
-                event: WindowEvent::MouseInput { button: MouseButton::Left, state, .. }, ..
-            } => {
-                if state == ElementState::Pressed {
-                    // 按下: 设置 flag -> 设置起点 -> 重置终点
-                    is_drawing_rect = true;
-                    start_point = curr_point;
-                    end_point = None
-                } else {
-                    // 释放: 设置 flag -> 设置终点 -> 计算区域
-                    is_drawing_rect = false;
-                    end_point = curr_point;
-                    // *select_area.borrow_mut() = Some(calc_select_area(start_point.unwrap(), end_point.unwrap()));
+                // endregion
+                // region 处理鼠标按下和松开事件
+                Event::WindowEvent {
+                    event: WindowEvent::MouseInput { button: MouseButton::Left, state, .. }, ..
+                } => {
+                    if state == ElementState::Pressed {
+                        // 按下: 设置 flag -> 设置起点 -> 重置终点
+                        is_drawing_rect = true;
+                        start_point = curr_point;
+                        end_point = None
+                    } else {
+                        // 释放: 设置 flag -> 设置终点 -> 计算区域
+                        is_drawing_rect = false;
+                        end_point = curr_point;
+                    }
                 }
-            }
-            // endregion
-            // region 处理鼠标移动事件
-            Event::WindowEvent {
-                event: WindowEvent::CursorMoved { position, .. }, ..
-            } => {
-                // 更新当前点位, 处理边界问题
-                curr_point = Some(calc_constrained_point(position, physical_xywh))
-            }
-            // endregion
-            // region 处理按键事件: 'ESC'
-            Event::WindowEvent {
-                event: WindowEvent::KeyboardInput {
-                    input: KeyboardInput {
-                        state: ElementState::Pressed,
-                        virtual_keycode: Some(VirtualKeyCode::Escape),
-                        ..
+                // endregion
+                // region 处理鼠标移动事件
+                Event::WindowEvent {
+                    event: WindowEvent::CursorMoved { position, .. }, ..
+                } => {
+                    // 更新当前点位, 处理边界问题
+                    curr_point = Some(calc_constrained_point(position, physical_xywh))
+                }
+                // endregion
+                // region 处理按键事件: 'ESC'
+                Event::WindowEvent {
+                    event: WindowEvent::KeyboardInput {
+                        input: KeyboardInput {
+                            state: ElementState::Pressed,
+                            virtual_keycode: Some(VirtualKeyCode::Escape),
+                            ..
+                        }, ..
                     }, ..
-                }, ..
-            } => {
-                println!("Exit (cause 'ESC' was pressed)");
-                *control_flow = ControlFlow::Exit
-            }
-            // endregion
-            // region 处理按键事件: 'Enter'
-            Event::WindowEvent {
-                event: WindowEvent::KeyboardInput {
-                    input: KeyboardInput {
-                        state: ElementState::Pressed,
-                        virtual_keycode: Some(VirtualKeyCode::Return),
-                        ..
+                } => {
+                    println!("Exit (cause 'ESC' was pressed)");
+                    select_area.borrow_mut().clear();
+                    *control_flow = ControlFlow::Exit;
+                }
+                // endregion
+                // region 处理按键事件: 'Enter'
+                Event::WindowEvent {
+                    event: WindowEvent::KeyboardInput {
+                        input: KeyboardInput {
+                            state: ElementState::Pressed,
+                            virtual_keycode: Some(VirtualKeyCode::Return),
+                            ..
+                        }, ..
                     }, ..
-                }, ..
-            } => {
-                println!("Exit (cause 'Enter' was pressed)");
-                // TODO: handle confirm
-                *control_flow = ControlFlow::Exit
+                } => {
+                    println!("Exit (cause 'Enter' was pressed)");
+                    *control_flow = ControlFlow::Exit;
+                }
+                // endregion
+                // region 关闭窗口
+                Event::WindowEvent {
+                    event: WindowEvent::CloseRequested, ..
+                } => {
+                    println!("Exit (cause 'WindowEvent::CloseRequested' was sent)");
+                    *control_flow = ControlFlow::Exit;
+                }
+                // endregion
+                // region 其他事件
+                event => {
+                    platform.handle_event(imgui.io_mut(), display.gl_window().window(), &event);
+                }
+                // endregion
             }
-            // endregion
-            // region 关闭窗口
-            Event::WindowEvent {
-                event: WindowEvent::CloseRequested, ..
-            } => {
-                println!("Exit (cause 'WindowEvent::CloseRequested' was sent)");
-                *control_flow = ControlFlow::Exit
-            }
-            // endregion
-            // region 其他事件
-            event => {
-                platform.handle_event(imgui.io_mut(), display.gl_window().window(), &event);
-            }
-            // endregion
         });
 
-        let v = (exit_code, *target.borrow());
+        let v = (exit_code, result.borrow().to_owned());
         v
     }
 }

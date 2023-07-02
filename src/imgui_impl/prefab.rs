@@ -3,6 +3,7 @@ use glium::glutin::dpi::{PhysicalPosition, PhysicalSize};
 use glium::glutin::event_loop::{EventLoopWindowTarget};
 use glium::glutin::platform::windows::WindowBuilderExtWindows;
 use glium::glutin::window::WindowBuilder;
+use image::{ImageBuffer, Rgba};
 use imgui_glium_renderer::Renderer;
 
 const TITLE: &str = "截图";
@@ -50,21 +51,57 @@ pub fn create_screen_pair(
 
 
 /// 交互式选择选中的区域
+#[derive(Debug, Clone)]
 pub struct SelectedArea {
+    /// 是否有效
+    pub valid: bool,
     /// 即: \[xmin, ymin, xmax, ymax\]
-    pub p1p2: [f32; 4],
+    pub p1p2: Option<[f32; 4]>,
     /// 目标区域的 rgba 阵列
     pub rgba: Vec<Vec<(u8, u8, u8, u8)>>,
 }
 
 impl SelectedArea {
-    pub fn new(p1p2: [f32; 4], rgba: Vec<Vec<(u8, u8, u8, u8)>>) -> SelectedArea {
-        SelectedArea { p1p2, rgba }
+    pub fn empty() -> SelectedArea {
+        SelectedArea { valid: false, p1p2: None, rgba: vec![] }
     }
 
-    /// 检查是否是同一区域 (同一区域则不再执行捕获)
+    pub fn new(p1p2: [f32; 4], rgba: Vec<Vec<(u8, u8, u8, u8)>>) -> SelectedArea {
+        SelectedArea { valid: true, p1p2: Some(p1p2), rgba }
+    }
+
+    /// 检查是否需要更新 (点位不同)
     pub fn check(&self, other_p1p2: [f32; 4]) -> bool {
-        self.p1p2 == other_p1p2
+        self.p1p2.map_or(true, |p1p2| p1p2 != other_p1p2)
+    }
+
+    pub fn clear(&mut self) {
+        self.valid = false;
+    }
+
+    pub fn update(&mut self, p1p2: [f32; 4], rgba: Vec<Vec<(u8, u8, u8, u8)>>) {
+        self.valid = true;
+        self.p1p2 = Some(p1p2);
+        self.rgba = rgba;
+    }
+
+    pub fn get_buffer(&self) -> Vec<u8> {
+        if !self.valid {
+            vec![]
+        } else {
+            let [x1, y1, x2, y2] = self.p1p2.unwrap();
+            let mut image_buf = ImageBuffer::new((x2 - x1) as u32, (y2 - y1) as u32);
+
+            for (x, y, pixel) in image_buf.enumerate_pixels_mut() {
+                let (r, g, b, a) = self.rgba[y as usize][x as usize];
+                *pixel = Rgba([r, g, b, a]);
+            }
+
+            image_buf.save("./screen_capture.png");
+            // image_buf.as_raw();
+            // image::ImageBuffer::from_raw();
+            vec![]
+        }
     }
 }
 
