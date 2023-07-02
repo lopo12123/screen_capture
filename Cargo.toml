@@ -36,4 +36,4 @@ image = { version = "0.23" }
 napi-build = "2.0.1"
 
 [profile.release]
-lto = true  #  Link-Time Optimization
+#lto = true  #  Link-Time Optimization

@@ -11,7 +11,16 @@ mod imgui_impl;
 pub mod screen_capture;
 
 fn main() {
-    ScreenCapture::capture_with_crop();
+    match ScreenCapture::capture_with_crop() {
+        Some(v) => {
+            println!("done");
+        }
+        None => {
+            println!("fail");
+        }
+    }
+
+    // ScreenCapture::capture_with_crop();
 
     // for screen in ScreenCapture::capture() {
     //     println!("rgba: {}, size: {}, w: {}, h: {}", screen.rgba.len(), screen.buffer.len(), screen.physical_width, screen.physical_height);

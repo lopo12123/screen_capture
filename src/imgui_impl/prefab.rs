@@ -40,7 +40,8 @@ pub fn create_screen_pair(
 
     let display = Display::new(
         builder,
-        glutin::ContextBuilder::new().with_vsync(true),
+        // FIXME: .with_vsync(true)
+        glutin::ContextBuilder::new().with_vsync(false),
         event_loop,
     ).unwrap();
 
@@ -66,10 +67,6 @@ impl SelectedArea {
         SelectedArea { valid: false, p1p2: None, rgba: vec![] }
     }
 
-    pub fn new(p1p2: [f32; 4], rgba: Vec<Vec<(u8, u8, u8, u8)>>) -> SelectedArea {
-        SelectedArea { valid: true, p1p2: Some(p1p2), rgba }
-    }
-
     /// 检查是否需要更新 (点位不同)
     pub fn check(&self, other_p1p2: [f32; 4]) -> bool {
         self.p1p2.map_or(true, |p1p2| p1p2 != other_p1p2)
@@ -91,14 +88,11 @@ impl SelectedArea {
         } else {
             let [x1, y1, x2, y2] = self.p1p2.unwrap();
             let mut image_buf = ImageBuffer::new((x2 - x1) as u32, (y2 - y1) as u32);
-            //let mut image_buf = ImageBuffer::new(1920, 1080);
 
             for (x, y, pixel) in image_buf.enumerate_pixels_mut() {
                 let (r, g, b, a) = self.rgba[y as usize][x as usize];
                 *pixel = Rgba::from([r, g, b, a]);
             }
-
-            // image_buf.save("./screen_capture.png");
 
             image_buf.into_raw()
         }

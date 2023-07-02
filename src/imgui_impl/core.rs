@@ -1,6 +1,4 @@
-use std::borrow::Cow;
 use std::cell::RefCell;
-use std::io::Cursor;
 use std::rc::Rc;
 use glium::glutin::event::{ElementState, Event, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
 use glium::glutin::event_loop::{ControlFlow, EventLoop};
@@ -12,10 +10,8 @@ use std::time::Instant;
 use glium::backend::Facade;
 use glium::glutin::dpi::PhysicalPosition;
 use glium::glutin::platform::run_return::EventLoopExtRunReturn;
-use glium::texture::{ClientFormat, RawImage2d, Texture2dDataSink};
+use glium::texture::{RawImage2d};
 use glium::uniforms::SamplerBehavior;
-use image::codecs::png::PngDecoder;
-use imgui::internal::RawCast;
 use crate::declares::CaptureInfo;
 use crate::imgui_impl::prefab::{BoundingBox, create_screen_pair, SelectedArea};
 use crate::utils::clamp;
@@ -196,7 +192,7 @@ impl System {
             let mut last_frame = Instant::now();
 
             // 用于保存结果
-            let mut select_area = result.clone();
+            let select_area = result.clone();
 
             move |event, _, control_flow| match event {
                 // region 和窗口事件相关的逻辑 (在此处更新 imgui 内部时间系统)

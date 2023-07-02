@@ -20,3 +20,20 @@ pub fn package_name() -> String {
 pub fn ttt() -> napi::Result<Option<SelectedImage>> {
     Ok(ScreenCapture::capture_with_crop())
 }
+
+#[cfg(test)]
+mod unit_test {
+    use crate::screen_capture::ScreenCapture;
+
+    #[test]
+    fn tt() {
+        match ScreenCapture::capture_with_crop() {
+            Some(v) => {
+                println!("done");
+            }
+            None => {
+                println!("fail");
+            }
+        }
+    }
+}
