@@ -40,8 +40,7 @@ pub fn create_screen_pair(
 
     let display = Display::new(
         builder,
-        // FIXME: .with_vsync(true)
-        glutin::ContextBuilder::new().with_vsync(false),
+        glutin::ContextBuilder::new().with_vsync(true),
         event_loop,
     ).unwrap();
 
@@ -93,6 +92,9 @@ impl SelectedArea {
                 let (r, g, b, a) = self.rgba[y as usize][x as usize];
                 *pixel = Rgba::from([r, g, b, a]);
             }
+
+            // TEST: 方便查看结果
+            // image_buf.save("./screen.png");
 
             image_buf.into_raw()
         }

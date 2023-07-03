@@ -79,7 +79,6 @@ fn load_screen_images(
             sampler: SamplerBehavior::default(),
         };
         let texture_id = renderer_textures.insert(texture);
-        // FIXME: 验证 scale_factor 影响
         texture_infos.push((
             texture_id,
             physical_x,
@@ -295,7 +294,7 @@ impl System {
                             let mut selected_pixels: Vec<Vec<(u8, u8, u8, u8)>> = vec![];
                             for y in (y1 as usize)..(y2 as usize) {
                                 let mut row = vec![(0u8, 0u8, 0u8, 0u8); (x2 as usize) - (x1 as usize)];
-                                // FIXME: read_front_buffer 获取的图像的y方向是反的, 需要反向拿取
+                                // NOTE: read_front_buffer 获取的图像的y方向是反的, 需要反向拿取
                                 row.clone_from_slice(&frame_pixels[pixel_h as usize - y][(x1 as usize)..(x2 as usize)]);
                                 selected_pixels.push(row);
                             }
@@ -305,7 +304,6 @@ impl System {
 
                             // 更新结果
                             select_area.borrow_mut().update(p1p2, selected_pixels);
-                            // select_area.borrow_mut().update(p1p2, frame_pixels);
 
                             println!("Update Capture! p1p2: {:?}; buffer: {} x {} x 4", p1p2, x, y);
                         }
