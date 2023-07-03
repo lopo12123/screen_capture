@@ -12,7 +12,7 @@ pub mod screen_capture;
 
 fn main() {
     match ScreenCapture::capture_with_crop() {
-        Some(v) => {
+        Some(_) => {
             println!("done");
         }
         None => {
