@@ -3,9 +3,8 @@ use glium::glutin::dpi::{PhysicalPosition, PhysicalSize};
 use glium::glutin::event_loop::{EventLoopWindowTarget};
 use glium::glutin::platform::windows::WindowBuilderExtWindows;
 use glium::glutin::window::WindowBuilder;
-use image::{DynamicImage, EncodableLayout, ImageBuffer, ImageEncoder, ImageOutputFormat, Rgba};
+use image::{ImageBuffer, ImageOutputFormat, Rgba};
 use image::DynamicImage::ImageRgba8;
-use image::png::PngEncoder;
 use imgui_glium_renderer::Renderer;
 
 const TITLE: &str = "截图";

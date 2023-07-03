@@ -4,8 +4,6 @@
 extern crate napi_derive;
 
 use std::fs;
-use std::fs::File;
-use std::io::Write;
 use crate::declares::SelectedImage;
 use crate::screen_capture::ScreenCapture;
 
