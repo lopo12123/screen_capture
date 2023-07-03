@@ -3,7 +3,9 @@ use glium::glutin::dpi::{PhysicalPosition, PhysicalSize};
 use glium::glutin::event_loop::{EventLoopWindowTarget};
 use glium::glutin::platform::windows::WindowBuilderExtWindows;
 use glium::glutin::window::WindowBuilder;
-use image::{ImageBuffer, Rgba};
+use image::{DynamicImage, EncodableLayout, ImageBuffer, ImageEncoder, ImageOutputFormat, Rgba};
+use image::DynamicImage::ImageRgba8;
+use image::png::PngEncoder;
 use imgui_glium_renderer::Renderer;
 
 const TITLE: &str = "截图";
@@ -96,7 +98,9 @@ impl SelectedArea {
             // TEST: 方便查看结果
             // image_buf.save("./screen.png");
 
-            image_buf.into_raw()
+            let mut bytes = vec![];
+            ImageRgba8(image_buf).write_to(&mut bytes, ImageOutputFormat::Png).unwrap();
+            bytes
         }
     }
 }
