@@ -228,26 +228,16 @@ impl System {
                         .build(|| {
                             let draw_list = ui.get_window_draw_list();
 
-                            // TODO: 绘制所有屏幕图像
-                            // for screen_texture in screen_texture_list {
-                            //     let (tid, sx, sy, sw, sh) = screen_texture;
-                            //     draw_list
-                            //         .add_image(
-                            //             tid,
-                            //             [sx as f32, sy as f32],
-                            //             [sx as f32 + sw as f32, sy as f32 + sh as f32],
-                            //         )
-                            //         .build();
-                            // }
-
-                            let (tid, sx, sy, sw, sh) = screen_texture_list[0].clone();
-                            draw_list
-                                .add_image(
-                                    tid,
-                                    [sx as f32, sy as f32],
-                                    [sx as f32 + sw as f32, sy as f32 + sh as f32],
-                                )
-                                .build();
+                            for screen_texture in &screen_texture_list {
+                                let (tid, sx, sy, sw, sh) = screen_texture;
+                                draw_list
+                                    .add_image(
+                                        tid.to_owned(),
+                                        [*sx as f32, *sy as f32],
+                                        [*sx as f32 + *sw as f32, *sy as f32 + *sh as f32],
+                                    )
+                                    .build();
+                            }
                         });
                     // endregion
 
